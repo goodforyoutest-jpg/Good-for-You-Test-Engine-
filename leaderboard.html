@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Leaderboard — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+.lb-layout { max-width:740px; margin:0 auto; padding:32px 20px 80px; }
+
+/* Org scope banner */
+.org-scope-banner {
+  display:flex; align-items:center; gap:10px;
+  background:var(--green-mist); border:1px solid var(--green-border);
+  padding:10px 16px; margin-bottom:20px;
+  font-size:.78rem; color:var(--green);
+}
+.org-scope-banner svg { flex-shrink:0; opacity:.7; color:var(--green); }
+.org-scope-name { font-weight:700; color:var(--green); }
+
+/* Filter row */
+.lb-filter { display:flex; gap:10px; align-items:center; margin-bottom:24px; flex-wrap:wrap; }
+.lb-filter select { flex:1; min-width:200px; max-width:360px; }
+
+/* Podium */
+.podium {
+  display:flex; align-items:flex-end; justify-content:center;
+  gap:12px; margin-bottom:32px; padding:0 8px;
+}
+.podium-slot { display:flex; flex-direction:column; align-items:center; flex:1; max-width:160px; }
+.podium-avatar {
+  width:56px; height:56px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Playfair Display','Libre Baskerville',serif; font-size:1.3rem; font-weight:700; color:#fff;
+  margin-bottom:8px; position:relative;
+}
+.podium-avatar .crown { position:absolute; top:-16px; font-size:1.2rem; }
+.p1 .podium-avatar { background:linear-gradient(135deg,var(--green),var(--green-lt)); width:72px; height:72px; font-size:1.6rem; box-shadow:0 8px 28px rgba(26,74,46,.3); }
+.p2 .podium-avatar { background:linear-gradient(135deg,#6B7280,#9CA3AF); }
+.p3 .podium-avatar { background:linear-gradient(135deg,#92400E,#B45309); }
+.podium-name  { font-size:.8rem; font-weight:700; color:var(--text); text-align:center; margin-bottom:3px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.podium-score { font-family:'Libre Baskerville',serif; font-size:1.1rem; color:var(--green); font-weight:700; margin-bottom:8px; }
+.podium-tests { font-size:.65rem; color:var(--muted); margin-bottom:8px; }
+.podium-block {
+  width:100%; border-radius:4px 4px 0 0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; padding:14px 0;
+}
+.p1 .podium-block { height:90px; background:rgba(26,74,46,.08); border:1px solid var(--green-border); border-bottom:none; }
+.p2 .podium-block { height:70px; background:var(--ivory-2); border:1px solid var(--ivory-3); border-bottom:none; }
+.p3 .podium-block { height:54px; background:var(--ivory-2); border:1px solid var(--ivory-3); border-bottom:none; }
+
+/* Rows */
+.lb-row {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 18px; border-bottom:1px solid var(--ivory-3);
+  transition:background .15s; background:#fff;
+}
+.lb-row:last-child { border-bottom:none; }
+.lb-row:hover { background:var(--green-mist); }
+.lb-row.my-row {
+  background:var(--green-mist);
+  border-left:3px solid var(--green);
+  padding-left:15px;
+}
+
+.lb-rank-num {
+  font-family:'Libre Baskerville',serif; font-size:1.05rem; font-weight:700;
+  color:var(--faint); min-width:36px; text-align:center;
+}
+.lb-row.my-row .lb-rank-num { color:var(--green); }
+
+.lb-avatar-sm {
+  width:40px; height:40px; border-radius:50%; flex-shrink:0;
+  background:var(--green-mist); border:1px solid var(--green-border);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Libre Baskerville',serif; font-size:.95rem; color:var(--green); font-weight:700;
+}
+.lb-row.my-row .lb-avatar-sm {
+  background:rgba(26,74,46,.14); border-color:var(--green-border-lt);
+}
+.lb-info { flex:1; min-width:0; }
+.lb-user-name { font-weight:700; font-size:.9rem; color:var(--text); margin-bottom:2px; }
+.lb-user-sub  { font-size:.72rem; color:var(--muted); }
+.lb-pct { font-family:'Libre Baskerville',serif; font-size:1.2rem; font-weight:700; }
+.lb-test-name { font-size:.68rem; color:var(--muted); text-align:right; margin-top:2px; }
+
+/* Sticky my-rank bar */
+.my-rank-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:200;
+  background:rgba(247,244,238,.97);
+  border-top:2px solid var(--green);
+  padding:12px 20px;
+  display:none; align-items:center; gap:14px;
+  backdrop-filter:blur(12px);
+}
+.my-rank-bar.visible { display:flex; }
+.my-rank-bar .mrb-label { font-size:.72rem; color:var(--muted); margin-right:4px; }
+.my-rank-bar .mrb-rank  { font-family:'Libre Baskerville',serif; font-size:1.1rem; color:var(--green); font-weight:700; }
+.my-rank-bar .mrb-name  { flex:1; font-size:.85rem; color:var(--text); font-weight:600; }
+.my-rank-bar .mrb-score { font-family:'Libre Baskerville',serif; font-size:1.1rem; font-weight:700; }
+.my-rank-bar .mrb-scroll { font-size:.72rem; color:var(--green); cursor:pointer; text-decoration:underline; white-space:nowrap; }
+
+.empty-state { text-align:center; padding:50px 20px; color:var(--muted); }
+.empty-state .es-icon { margin-bottom:12px; display:flex; justify-content:center; color:var(--ivory-4); }
+
+/* Shimmer skeleton */
+.shimmer-row {
+  display:flex; align-items:center; gap:14px; padding:14px 18px;
+  border-bottom:1px solid var(--ivory-3);
+}
+.shimmer-circle { width:40px; height:40px; border-radius:50%; background:var(--ivory-3); animation:shimmer-pulse 1.4s ease infinite; }
+.shimmer-block  { height:12px; border-radius:4px; background:var(--ivory-3); animation:shimmer-pulse 1.4s ease infinite; }
+@keyframes shimmer-pulse { 0%,100%{opacity:.5;}50%{opacity:1;} }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn"><span></span><span></span><span></span></button>
+  <span class="header-ca-label" id="headerCaLabel">Leaderboard</span>
+  <span class="header-pill">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+    Rankings
+  </span>
+</header>
+
+<!-- Sticky my-rank bar (visible when user scrolled past their row) -->
+<div class="my-rank-bar" id="myRankBar">
+  <span class="mrb-label">Your Rank</span>
+  <span class="mrb-rank" id="mrbRank">—</span>
+  <span class="mrb-name" id="mrbName">—</span>
+  <span class="mrb-score" id="mrbScore">—</span>
+  <span class="mrb-scroll" onclick="scrollToMyRow()">↑ Jump to me</span>
+</div>
+
+<div class="page-wrap">
+<div class="lb-layout">
+
+  <div class="section-label"><span>Rankings</span><div class="section-label-line"></div></div>
+
+  <!-- Org scope banner -->
+  <div class="org-scope-banner" id="orgScopeBanner" style="display:none;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Showing rankings for <span class="org-scope-name" id="orgScopeName" style="margin-left:4px;">your organisation</span>
+  </div>
+
+  <!-- Filter -->
+  <div class="lb-filter">
+    <select class="form-input" id="lbTestFilter" onchange="loadLeaderboard(this.value)">
+      <option value="org_overall">🏆 Overall — All Tests Combined</option>
+    </select>
+    <button class="btn-secondary" onclick="loadLeaderboard(document.getElementById('lbTestFilter').value)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Podium -->
+  <div id="podiumSection" style="display:none;">
+    <div class="podium" id="podiumEl"></div>
+  </div>
+
+  <!-- Table -->
+  <div class="panel-card">
+    <div class="panel-card-header" style="justify-content:space-between;">
+      <span id="lbTableTitle">Top Rankings</span>
+      <span id="lbCountLabel" style="font-size:.72rem;color:var(--muted);"></span>
+    </div>
+    <div id="lbTableBody">
+      <!-- shimmer -->
+      ${[1,2,3,4,5].map(()=>`
+      <div class="shimmer-row">
+        <div class="shimmer-block" style="width:28px;"></div>
+        <div class="shimmer-circle"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+          <div class="shimmer-block" style="width:55%;"></div>
+          <div class="shimmer-block" style="width:35%;height:9px;"></div>
+        </div>
+        <div class="shimmer-block" style="width:48px;height:22px;"></div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script>
+initFirebase();
+initBgCanvas();
+injectDrawer('leaderboard');
+injectHeaderUser();
+populateDrawerUser();
+
+let currentUserId  = null;
+let currentOrgCode = null;
+let currentOrgName = null;
+let myRankData     = null;
+let myRowEl        = null;
+
+async function init() {
+  const user = await getCurrentUser();
+  if (user) {
+    currentUserId = user.uid;
+    const doc = await getUserDoc(user.uid);
+    currentOrgCode = doc?.orgCode || null;
+
+    // Fetch org name
+    if (currentOrgCode) {
+      try {
+        const orgSnap = await window.db.collection('organisations').doc(currentOrgCode).get();
+        currentOrgName = orgSnap.exists ? orgSnap.data().name : currentOrgCode;
+      } catch(e) { currentOrgName = currentOrgCode; }
+      const banner = document.getElementById('orgScopeBanner');
+      document.getElementById('orgScopeName').textContent = currentOrgName;
+      banner.style.display = 'flex';
+    }
+  }
+  await loadTests();
+  await loadLeaderboard('org_overall');
+  setupStickyRankBar();
+}
+
+async function loadTests() {
+  try {
+    const snap = await window.db.collection('tests').get();
+    const sel  = document.getElementById('lbTestFilter');
+    const orgTests = snap.docs.filter(d => (d.data().orgCode||null) === (currentOrgCode||null));
+    orgTests.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = '📋 ' + d.data().title;
+      sel.appendChild(opt);
+    });
+  } catch(e){}
+}
+
+async function loadLeaderboard(filterVal) {
+  const tbody  = document.getElementById('lbTableBody');
+  const podium = document.getElementById('podiumSection');
+  myRankData = null; myRowEl = null;
+  document.getElementById('myRankBar').classList.remove('visible');
+
+  // Show shimmer
+  tbody.innerHTML = [1,2,3,4,5].map(()=>`
+    <div class="shimmer-row">
+      <div class="shimmer-block" style="width:28px;"></div>
+      <div class="shimmer-circle"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <div class="shimmer-block" style="width:55%;"></div>
+        <div class="shimmer-block" style="width:35%;height:9px;"></div>
+      </div>
+      <div class="shimmer-block" style="width:48px;height:22px;"></div>
+    </div>`).join('');
+  podium.style.display = 'none';
+
+  try {
+    let allResults = [];
+
+    if (filterVal === 'org_overall') {
+      document.getElementById('lbTableTitle').textContent = '🏆 Overall — All Tests Combined';
+      const snap = await window.db.collection('results').limit(200).get();
+      allResults = snap.docs.map(d => d.data()).filter(r => (r.orgCode||null) === (currentOrgCode||null));
+    } else {
+      const tSnap = await window.db.collection('tests').doc(filterVal).get();
+      const tName = tSnap.exists ? tSnap.data().title : 'Test';
+      document.getElementById('lbTableTitle').textContent = '📋 ' + tName;
+      const snap = await window.db.collection('results').where('testId','==',filterVal).get();
+      allResults = snap.docs.map(d => d.data());
+    }
+
+    if (allResults.length === 0) {
+      document.getElementById('lbCountLabel').textContent = '';
+      tbody.innerHTML = '<div class="empty-state"><div class="es-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg></div><p>No results yet for this leaderboard.</p></div>';
+      return;
+    }
+
+    // Fetch user names
+    const uidSet = [...new Set(allResults.map(r => r.userId).filter(Boolean))];
+    const userMap = {};
+    const testCountMap = {};
+    await Promise.all(uidSet.map(async uid => {
+      try {
+        const uSnap = await window.db.collection('users').doc(uid).get();
+        userMap[uid] = uSnap.exists ? (uSnap.data().username || 'Student') : 'Student';
+      } catch(e){ userMap[uid] = 'Student'; }
+    }));
+
+    // Count tests per user
+    allResults.forEach(r => {
+      if (!r.userId) return;
+      testCountMap[r.userId] = (testCountMap[r.userId] || 0) + 1;
+    });
+
+    // Deduplicate: best score per user per test, then average for overall
+    const byUser = {};
+    allResults.forEach(r => {
+      if (!r.userId) return;
+      if (!byUser[r.userId]) byUser[r.userId] = { scores:[], correct:0, total:0, userId:r.userId };
+      byUser[r.userId].scores.push(r.percentage||0);
+      byUser[r.userId].correct += r.correct||0;
+      byUser[r.userId].total   += r.total||0;
+    });
+
+    const deduped = Object.values(byUser).map(u => ({
+      userId:    u.userId,
+      percentage: Math.round(u.scores.reduce((a,b)=>a+b,0) / u.scores.length),
+      correct:   u.correct,
+      total:     u.total,
+      testCount: u.scores.length,
+    })).sort((a,b) => b.percentage - a.percentage)
+       .map((r,i) => ({...r, rank:i+1}));
+
+    document.getElementById('lbCountLabel').textContent = deduped.length + ' students';
+
+    // Podium (top 3) — order: 2nd, 1st, 3rd
+    if (deduped.length >= 2) {
+      const slots = [
+        deduped[1] ? {data:deduped[1], cls:'p2', crown:'🥈'} : null,
+        {data:deduped[0], cls:'p1', crown:'👑'},
+        deduped[2] ? {data:deduped[2], cls:'p3', crown:'🥉'} : null,
+      ].filter(Boolean);
+
+      document.getElementById('podiumEl').innerHTML = slots.map(slot => {
+        const name = userMap[slot.data.userId] || 'Student';
+        const isMe = slot.data.userId === currentUserId;
+        return `
+          <div class="podium-slot ${slot.cls}">
+            <div class="podium-avatar" style="${isMe?'box-shadow:0 0 0 3px var(--gold);':''}">
+              <span class="crown">${slot.crown}</span>${name.charAt(0).toUpperCase()}
+            </div>
+            <div class="podium-name">${escHtml(name)}${isMe?' ✦':''}</div>
+            <div class="podium-score">${slot.data.percentage}%</div>
+            <div class="podium-tests">${slot.data.testCount} test${slot.data.testCount!==1?'s':''}</div>
+            <div class="podium-block">${slot.data.rank}</div>
+          </div>`;
+      }).join('');
+      podium.style.display = 'block';
+    }
+
+    // Table rows
+    const rows = deduped.map((r, i) => {
+      const name  = userMap[r.userId] || 'Student';
+      const isMe  = r.userId === currentUserId;
+      const pct   = r.percentage;
+      const color = pct>=75?'#6FCF97':pct>=50?'#C9A84C':'#E57373';
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      const acc   = r.total ? Math.round(r.correct/r.total*100) : 0;
+
+      if (isMe) {
+        myRankData = { rank:r.rank, name, pct, color };
+        document.getElementById('mrbRank').textContent  = '#' + r.rank;
+        document.getElementById('mrbName').textContent  = name;
+        document.getElementById('mrbScore').textContent = pct + '%';
+        document.getElementById('mrbScore').style.color = color;
+      }
+
+      return `
+        <div class="lb-row ${isMe?'my-row':''}" id="${isMe?'my-lb-row':'lb-row-'+i}">
+          <div class="lb-rank-num">${medal || ('#'+(i+1))}</div>
+          <div class="lb-avatar-sm">${name.charAt(0).toUpperCase()}</div>
+          <div class="lb-info">
+            <div class="lb-user-name">${escHtml(name)}${isMe?' <span style="font-size:.7rem;color:var(--gold);font-weight:800;">✦ You</span>':''}</div>
+            <div class="lb-user-sub">${r.correct} correct · ${r.testCount} test${r.testCount!==1?'s':''} · ${acc}% accuracy</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div class="lb-pct" style="color:${color};">${pct}%</div>
+          </div>
+        </div>`;
+    });
+
+    tbody.innerHTML = rows.join('');
+
+    if (myRankData) myRowEl = document.getElementById('my-lb-row');
+
+  } catch(e) {
+    tbody.innerHTML = '<div class="empty-state"><p>Error loading leaderboard.</p></div>';
+    console.error(e);
+  }
+}
+
+// Sticky rank bar — appears when "You" row scrolls out of viewport
+function setupStickyRankBar() {
+  const bar = document.getElementById('myRankBar');
+  window.addEventListener('scroll', () => {
+    if (!myRowEl || !myRankData) return;
+    const rect = myRowEl.getBoundingClientRect();
+    const outOfView = rect.bottom < 0 || rect.top > window.innerHeight;
+    bar.classList.toggle('visible', outOfView);
+  }, { passive: true });
+}
+
+function scrollToMyRow() {
+  if (!myRowEl) return;
+  myRowEl.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+init();
+</script>
+</body>
+</html>

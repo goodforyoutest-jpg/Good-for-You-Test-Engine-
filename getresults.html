@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Export Results — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+
+.gr-layout { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+
+/* ── STATS CARDS ── */
+.admin-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px; }
+.admin-stat {
+  background:#fff; border:1px solid var(--ivory-3);
+  border-bottom:3px solid var(--green);
+  padding:20px 16px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  position:relative; overflow:hidden;
+  transition:all .18s;
+}
+.admin-stat::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--green),transparent); opacity:.4;
+}
+.admin-stat:hover { transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.08); border-bottom-color:#B8962E; }
+.admin-stat .as-icon { color:var(--green); opacity:.8; margin-bottom:2px; }
+.admin-stat .as-num { font-family:'Libre Baskerville',serif; font-size:2rem; font-weight:700; color:var(--green); line-height:1; }
+.admin-stat .as-lbl { font-size:.63rem; color:var(--faint); text-transform:uppercase; letter-spacing:.1em; }
+
+/* ── ANALYTICS ── */
+.analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.ana-card {
+  background:#fff; border:1px solid var(--ivory-3);
+  padding:18px;
+}
+.ana-card-header { display:flex; align-items:center; gap:8px; margin-bottom:14px; color:var(--green); padding-bottom:10px; border-bottom:1px solid var(--ivory-3); }
+.ana-card-header svg { opacity:.8; }
+.ana-card-title { font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--green); }
+
+/* ── LEADERBOARD ── */
+.lb-row {
+  display:flex; align-items:center; gap:14px; padding:12px 16px;
+  border-bottom:1px solid var(--ivory-3); transition:background .15s;
+}
+.lb-row:last-child { border-bottom:none; }
+.lb-row:hover { background:var(--green-mist); }
+.lb-rank { font-family:'Libre Baskerville',serif; font-size:1.1rem; font-weight:700; color:var(--green); min-width:32px; }
+.lb-name { flex:1; font-size:.88rem; color:var(--text); font-weight:500; }
+.lb-score { font-weight:800; color:var(--green); }
+
+/* ── DIFFICULTY BARS ── */
+.diff-bar-wrap { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.diff-q-label { font-size:.75rem; color:var(--text-mid); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px; }
+.diff-bar-track { flex:1; height:7px; background:var(--ivory-3); overflow:hidden; }
+.diff-bar-fill { height:100%; transition:width .6s cubic-bezier(.4,0,.2,1); }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty-state .es-icon { margin-bottom:12px; color:var(--ivory-4); display:flex; justify-content:center; }
+.empty-state p { font-size:.9rem; }
+
+/* ── BACK BTN ── */
+.back-btn {
+  display:inline-flex; align-items:center; gap:7px;
+  color:var(--muted); font-size:.82rem; font-weight:600;
+  text-decoration:none; margin-bottom:24px;
+  padding:8px 14px; border:1px solid var(--ivory-3);
+  background:var(--ivory-2); transition:all .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+.back-btn:hover { color:var(--green); border-color:var(--green-border); background:var(--green-mist); }
+
+@media(max-width:768px){
+  .admin-stats { grid-template-columns:repeat(2,1fr); }
+  .analytics-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  <span class="header-ca-label" id="headerCaLabel">Export Results</span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;color:rgba(255,255,255,.7);">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export
+  </span>
+</header>
+
+<div class="page-wrap">
+<div class="gr-layout">
+
+  <a href="admin.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to Admin Panel
+  </a>
+
+  <div class="section-label" style="margin-bottom:20px;">
+    <span>Export Test Results</span>
+    <div class="section-label-line"></div>
+  </div>
+
+  <div class="panel-card" style="margin-bottom:24px;">
+    <div class="panel-card-header"><span>Select a Test</span></div>
+    <div style="padding:20px;">
+      <select class="form-input" id="analyticsTestSelect" onchange="loadTestAnalytics(this.value)" style="max-width:480px;">
+        <option value="">— Choose a test to view results —</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="analyticsContent">
+    <div class="empty-state">
+      <div class="es-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <p>Select a test above to load results and export.</p>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+initFirebase();
+initBgCanvas();
+injectDrawer('');
+
+let grUser    = null;
+let grOrgCode = null;
+
+async function initPage() {
+  const result = await requireAdmin();
+  if (!result) return;
+  grUser    = result.user;
+  grOrgCode = result.doc.orgCode || null;
+  const roleLabel = result.doc.role === 'teacher' ? 'Teacher' : 'Admin';
+  document.getElementById('headerCaLabel').textContent = 'Export Results — ' + (result.doc.username || roleLabel);
+  populateDrawerUser();
+  await loadTestSelect();
+}
+
+async function loadTestSelect() {
+  try {
+    const snap = await window.db.collection('tests').get();
+    const sel  = document.getElementById('analyticsTestSelect');
+    const tests = snap.docs.filter(d => (d.data().orgCode || null) === (grOrgCode || null));
+    if (tests.length === 0) {
+      sel.innerHTML = '<option value="">— No tests found for your organisation —</option>';
+      return;
+    }
+    tests.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = d.data().title + (d.data().active ? ' ● Live' : ' ○ Draft');
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function loadTestAnalytics(testId) {
+  if (!testId) return;
+  const container = document.getElementById('analyticsContent');
+  container.innerHTML = '<div class="loading-screen" style="min-height:200px;"><div class="spinner"></div></div>';
+
+  try {
+    const [testSnap, resultsSnap] = await Promise.all([
+      window.db.collection('tests').doc(testId).get(),
+      window.db.collection('results').where('testId','==',testId).get()
+    ]);
+    const test    = testSnap.data();
+    const allResults = resultsSnap.docs.map(d => d.data());
+    // Deduplicate: one entry per student, keep highest percentage
+    const byUser = {};
+    allResults.forEach(r => {
+      const uid = r.userId;
+      if (!uid) return;
+      if (!byUser[uid] || (r.percentage||0) > (byUser[uid].percentage||0)) byUser[uid] = r;
+    });
+    const results = Object.values(byUser);
+    const total   = results.length;
+
+    if (total === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="es-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><p>No submissions yet for this test.</p></div>`;
+      return;
+    }
+
+    const avg  = Math.round(results.reduce((s,r) => s + (r.percentage||0), 0) / total);
+    const best = Math.max(...results.map(r => r.percentage||0));
+
+    const secAgg = {};
+    results.forEach(r => {
+      Object.entries(r.sectionStats||{}).forEach(([sec,stats]) => {
+        if (!secAgg[sec]) secAgg[sec] = {c:0, t:0};
+        secAgg[sec].c += stats.c||0;
+        secAgg[sec].t += stats.t||0;
+      });
+    });
+
+    const lbRows = [...results].sort((a,b) => (b.percentage||0)-(a.percentage||0));
+    const medals = ['🥇','🥈','🥉'];
+
+    const uidSet = [...new Set(lbRows.map(r => r.userId).filter(Boolean))];
+    const userMap = {};
+    await Promise.all(uidSet.map(async uid => {
+      try {
+        const uSnap = await window.db.collection('users').doc(uid).get();
+        if (uSnap.exists) {
+          const ud = uSnap.data();
+          userMap[uid] = ud.username || ud.email || uid.slice(0,8);
+        } else {
+          userMap[uid] = uid.slice(0,8);
+        }
+      } catch(e) { userMap[uid] = uid.slice(0,8); }
+    }));
+
+    const lbHtml = lbRows.slice(0,10).map((r,i) => `
+      <div class="lb-row">
+        <div class="lb-rank">${medals[i]||'#'+(i+1)}</div>
+        <div class="lb-name">${escHtml(userMap[r.userId]||'—')}<br><span style="font-size:.72rem;color:var(--muted);">${r.correct||0}/${r.total||0} correct</span></div>
+        <div class="lb-score">${r.percentage||0}%</div>
+      </div>`).join('');
+
+    const secHtml = Object.entries(secAgg).map(([sec,{c,t}]) => {
+      const pct   = Math.round(c/t*100);
+      const color = pct>=75?'var(--green)':pct>=50?'#B8962E':'#DC2626';
+      return `<div class="diff-bar-wrap">
+        <div class="diff-q-label">${escHtml(sec)}</div>
+        <div class="diff-bar-track"><div class="diff-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+        <div style="font-size:.72rem;color:var(--muted);min-width:36px;text-align:right;">${pct}%</div>
+      </div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="admin-stats" style="margin-bottom:20px;">
+        <div class="admin-stat">
+          <div class="as-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="as-num">${total}</div><div class="as-lbl">Submissions</div>
+        </div>
+        <div class="admin-stat">
+          <div class="as-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div class="as-num">${avg}%</div><div class="as-lbl">Avg Score</div>
+        </div>
+        <div class="admin-stat">
+          <div class="as-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg></div>
+          <div class="as-num">${best}%</div><div class="as-lbl">Top Score</div>
+        </div>
+      </div>
+
+      <div class="analytics-grid" style="margin-bottom:20px;">
+        <div class="ana-card">
+          <div class="ana-card-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span class="ana-card-title">Section Accuracy</span>
+          </div>
+          ${secHtml || '<div style="color:var(--muted);font-size:.82rem;">No section data available.</div>'}
+        </div>
+        <div class="ana-card">
+          <div class="ana-card-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+            <span class="ana-card-title">Leaderboard (Top 10)</span>
+          </div>
+          ${lbHtml}
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn-primary" onclick="exportResults()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 26px;font-size:.95rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Results
+        </button>
+      </div>`;
+
+    window._exportSnap    = testSnap;
+    window._exportResults = results;
+    window._exportUserMap = userMap;
+
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><p>Error loading results.</p></div>`;
+    console.error(e);
+  }
+}
+
+/* ── XLSX TEMPLATE — raw XML base64, styles preserved by JSZip ── */
+const XLSX_TPL_B64 = 'UEsDBBQAAAAIAJdUuFz5bOZCDAEAALgCAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbK1SyU7DMBC99yssX6vaLQeEUJIeWI7AoXzA4Ewaq97kcUvy9zgui4QocOhpNHqrRlOtB2vYASNp72q+EkvO0Cnfaret+fPmfnHFGSVwLRjvsOYjEl83s2ozBiSWxY5q3qcUrqUk1aMFEj6gy0jno4WU17iVAdQOtigvlstLqbxL6NIiTR68mTFW3WIHe5PY3ZCRY5eIhji7OXKnuJpDCEYrSBmXB9d+C1q8h4isLBzqdaB5JnB5KmQCT2d8SR/ziaJukT1BTA9gM1EORr76uHvxfid+9/mhq+86rbD1am+zRFCICC31iMkaUaawoN38XxUKn2QZqzN3+fT/uwql0SCd+xbF9CO8kuXxmjdQSwMEFAAAAAgAl1S4XF2H9C60AAAALAEAAAsAAABfcmVscy8ucmVsc43Pvw6CMBAG8J2naG6XgoMxhsJiTFgNPkAtx59Qek1bFd7ejmIcHC933+/yFdUya/ZE50cyAvI0A4ZGUTuaXsCtueyOwHyQppWaDApY0UNVJsUVtQwx44fRehYR4wUMIdgT514NOEufkkUTNx25WYY4up5bqSbZI99n2YG7TwPKhLENy+pWgKvbHFizWvyHp64bFZ5JPWY04ceXr4soS9djELBo/iI33YmmNKLAY0e+KVm+AVBLAwQUAAAACACXVLhcNmYLOMgAAAAzAQAADwAAAHhsL3dvcmtib29rLnhtbI2PwU7DQAxE7/2Kle90Uw4IRUl6QUi9VvABS9ZpVt21I3tb4O8xqcoZnzy2Zkav23+V7K4omph62G0bcEgjx0SnHt7fXh+ewWkNFENmwh6+UWE/bLpPlvMH89mZn7SHudal9V7HGUvQLS9I9plYSqgm5eR1EQxRZ8Rasn9smidfQiLYuL9Zs1r5TxpPUxrxhcdLQaq3OMEcqnHonBaFwYK7tU6HteMmHIViHEfUS65qcL/HQzR2cNImW+QQd+BXu7/7O38HHn4AUEsDBBQAAAAIAJdUuFw50x48ygAAAK8BAAAaAAAAeGwvX3JlbHMvd29ya2Jvb2sueG1sLnJlbHOtkE2LwkAMhu/+iiF3m9aDyNKpFxG8ivsDhmn6ge3MMIkf/fc7KMoKCnvYU3gT8uQh5fo6DupMkXvvNBRZDoqc9XXvWg3fh+18BYrFuNoM3pGGiRjW1azc02Ak7XDXB1YJ4lhDJxK+ENl2NBrOfCCXJo2Po5EUY4vB2KNpCRd5vsT4mwHVTKkXrNrVGuKuLkAdpkB/wfum6S1tvD2N5OTNFbz4eOSOSBLUxJZEw7PFeCtFlqiAH30W/+nDMg3ppU+Ze34YlPjy5+oHUEsDBBQAAAAIAJdUuFzdbCzUsQIAADsVAAANAAAAeGwvc3R5bGVzLnhtbNVYS2+jMBC+76+wuG955QEroErTIO2ll3alvRowxJKxkXGqpL9+bSDBVV+kpdnkEjwT5pvP45mxTXC9LQl4RLzGjIaGfWUZANGUZZgWofHnIf7pGaAWkGaQMIpCY4dq4zr6EdRiR9D9GiEBJAKtQ2MtRPXLNOt0jUpYX7EKUflPzngJhRR5YdYVRzCrlVFJTMeyZmYJMTWiHwAEOaOiBinbUCF52I2yU0dB/QQeIWn0ZhRQWKJWXkKCE46V0mze1I0SUzOcPDdccAyJUqWMMA54kYRGHK+8pT9fvI62R/KHAM0XXrzwPqY1CGzpL7zJcsAcra+iHYe0Wq282zeidTyvWbyM/fkYvIYG/+vxOh5tNZ27c3c0tJcr0I7qtqQwIYeSmh0qSmqjoIJCIE5jKYBu/LCrZIFTWeYtonpvkEnB4c52pkda1YzgzIiCvFjqc7Ju7Rtn1WBppmMg2xPHcWffgWzFduy634J8Y3vOe5zbUbveCeOZ7OSHJrpf8VYfBQTlQiJxXKzVU7BK/iZMCFbKQYZhwSgkyldn0eB3qI2QIkLuVef/m790s80B3ZRxKX5noSH3EZWI+6Hk2A1buFYwWw866sGN5sFxPu8CbHPN1zsQdg/hvAEBYFWRXczaWXeStOmlBcEFLVEXlgDuRbBmHD9JQ1XLqVQgbqhdV+BU06jIb/MPeDon46nS5fxZNtn8WZrWYJodsY+yyO0B3XPOoknPc3LOPKcn43l0tvs9y9noLFvV3aZMEI+bI/TIMdbYexfN3r889lp+zy+kDrV+MT1nntOT8RypX4zE8j/1iwtk718e+9f7xfnV4esZPtI56JRRtgazf34sfCcgtnV5+9Qb9M+1bNqLpH6HbC6V+kW11wL1bSU07pRjos0h2WAiMN3fGbXLqYQNzP6zZ/QPUEsDBBQAAAAIAJdUuFwam34P/gMAAL4QAAAYAAAAeGwvd29ya3NoZWV0cy9zaGVldDEueG1slVhbc5s4GH3vr9Aw05ndhw13gxlMx+ZiupNt08RtH3dULNtMAHkETrr/fgXIEGRuyUvC0TlH6DufAMX+9DtNwAsieYyzlSDfSQJAWYT3cXZcCd93wV+mAPICZnuY4AythP9QLnxyPtivmDznJ4QKQA2yfCWciuJsiWIenVAK8zt8RhkdOWCSwoJekqOYnwmC+0qUJqIiSQsxhXEmfADtT2VmkTl2+HCII+Th6JKirKj9CEpgQVeSn+JzLjjU2a7meyCOXcBfLk4wAeT4ayUEgeTJG8UXRMcWr5yGH1TzPBCwRwd4SYpH/Bqi+HgqaIl0AUSXvMBpg1CPUhnhJHeqxZR/gjQuCyqAFP6ufr/G++K0Esyr/Gd9zdRvRQoTKY1I0aZVKlOpjUpWplUaU2mtSppW6Uylv0u1YKrFu1QGUxmtakY1TKYyJ+eyxWtwdfYeLCBzI/gVkCq8MmdVuU3eYc1rRyVxTZl5xaeDcZbEGXoqiODYcU77z9l93t37/z7cr10//Hrv+Y+2WNDuKwfFqOu0uTrR9qwAlwe8FugofZ4Y8MCWB0LOyhbpwrslUOoSyOZkCZTKSxkowdP3zd++u5tZhKtXUwQe8FqgW4QaVwfu4h9/t553C8HVqCkeD4QtMFQ8tS7eYrJ2amWlNd4bHnB5wGuBbgF4YsADWx4IOauehWj1QpTpjaBVXvpA/R9h9jwS+7j4qbjs6QMffIEpGjZxJ0wiTBD4OKz3xvUuJgRFxbDeH9f/JDg7jrTdxN0/x+cz2g/rt+P6XZwisIPPKBu2CCcscAET8C2/NejpG531jTTZN3o16YJO8+LItvjS0x01xRgqDUzPCQJfPQ8cCRpboFsbmdVc0t1S6Z3Oq1myXNG0xZXEUu6M9jsEMzjbhtO/Ks20ZGUkq84UutSZoyePxew8FrWxMnLvG8YZetiyRPwf/heACcyOY7uWeekslIXeHwqjGRVNVblQOqPL/lA6HLM/lIbTvzBdtiR1JJTOFNOhGLNDMd5sErU/E2PuJiFjjxG3tqFfTnUcmtQfh9HpcImLozMq9ycazCFtjfFdouuWZowEYrxvl5hzX9sm/9rmAZcHvBbovjV4YsADWx4IOauehSxnv7aX4y+9BOY5WNPTIhzbxJvaRV7yq3PZQPnIPTjrH/7jeuv/4eqWa/xpi4eqx/ob7I0jK9QNEgzNur2hhjy1p2blaWFe+iWzG/8N4t4g3huE+3znqcENsr1BQt6uWRE73F4PNXaKyBG5KElyEOFLVpQaJmmG6EPhUC7MCtsjAT+oWJ4yNOgrVjg4uF5am+X15NXeTXV9pn31hIrLmb4oYvqNV53lV0ICs30ewTMqZbbY/OvB+R9QSwECFAMUAAAACACXVLhc+WzmQgwBAAC4AgAAEwAAAAAAAAAAAAAAgAEAAAAAW0NvbnRlbnRfVHlwZXNdLnhtbFBLAQIUAxQAAAAIAJdUuFxdh/QutAAAACwBAAALAAAAAAAAAAAAAACAAT0BAABfcmVscy8ucmVsc1BLAQIUAxQAAAAIAJdUuFw2Zgs4yAAAADMBAAAPAAAAAAAAAAAAAACAARoCAAB4bC93b3JrYm9vay54bWxQSwECFAMUAAAACACXVLhcOdMePMoAAACvAQAAGgAAAAAAAAAAAAAAgAEPAwAAeGwvX3JlbHMvd29ya2Jvb2sueG1sLnJlbHNQSwECFAMUAAAACACXVLhc3Wws1LECAAA7FQAADQAAAAAAAAAAAAAAgAERBAAAeGwvc3R5bGVzLnhtbFBLAQIUAxQAAAAIAJdUuFwam34P/gMAAL4QAAAYAAAAAAAAAAAAAACAAe0GAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWxQSwUGAAAAAAYABgCAAQAAIQsAAAAA';
+
+function exportResults() {
+  const testSnap = window._exportSnap;
+  const results  = window._exportResults;
+  const userMap  = window._exportUserMap;
+  if (!testSnap || !results) { showToast('No analytics loaded.', 'error'); return; }
+
+  const test    = testSnap.data();
+  const title   = test.title || 'Test';
+  const subject = test.subject || '-';
+  const dur     = test.durationMinutes || '-';
+  const totalQs = (test.questions || []).length;
+  const months  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now     = new Date();
+  const expDate = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+
+  const sorted = [...results].sort((a,b) => (a.rank||999)-(b.rank||999) || (b.percentage||0)-(a.percentage||0));
+
+  function fmtTime(secs) {
+    if (secs === null || secs === undefined || secs === '') return '—';
+    if (secs === 0) return '—';
+    return String(Math.floor(secs/60)).padStart(2,'0') + ':' + String(secs%60).padStart(2,'0');
+  }
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function scoreStyle(pct, isOdd) {
+    // White/cream text for all score cells — no colour coding to protect student privacy
+    return isOdd ? 20 : 21;
+  }
+
+  const binStr = atob(XLSX_TPL_B64);
+  const bytes  = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+
+  JSZip.loadAsync(bytes).then(zip => {
+    return zip.file('xl/worksheets/sheet1.xml').async('string').then(sheetXml => {
+
+      sheetXml = sheetXml
+        .replace('TITLE_PLACEHOLDER',   esc(title) + ' - Result Sheet')
+        .replace('SUBJECT_PLACEHOLDER', 'Subject: ' + esc(subject))
+        .replace('META_PLACEHOLDER',    'Duration: ' + esc(dur) + ' min  |  Questions: ' + totalQs + '  |  Exported: ' + expDate);
+
+      let dataRowsXml = '';
+      sorted.forEach((r, idx) => {
+        const excelRow = 5 + idx;
+        const isOdd    = idx % 2 === 0;
+        const rankS    = isOdd ? 6  : 12;
+        const nameS    = isOdd ? 7  : 13;
+        const dataS    = isOdd ? 11 : 17;
+        const pct      = r.percentage || 0;
+        const scoreS   = scoreStyle(pct, isOdd);
+        const pctVal   = (pct / 100).toFixed(4);
+        const name     = esc(userMap[r.userId] || '-');
+        const time     = esc(fmtTime(r.timeTaken));
+
+        dataRowsXml += `<row r="${excelRow}" ht="20" customHeight="1">` +
+          `<c r="A${excelRow}" s="${rankS}"><v>${r.rank || idx+1}</v></c>` +
+          `<c r="B${excelRow}" s="${nameS}" t="inlineStr"><is><t>${name}</t></is></c>` +
+          `<c r="C${excelRow}" s="${scoreS}"><v>${pctVal}</v></c>` +
+          `<c r="D${excelRow}" s="${dataS}"><v>${r.correct||0}</v></c>` +
+          `<c r="E${excelRow}" s="${dataS}"><v>${r.wrong||0}</v></c>` +
+          `<c r="F${excelRow}" s="${dataS}"><v>${r.skipped||0}</v></c>` +
+          `<c r="G${excelRow}" s="${dataS}" t="inlineStr"><is><t>${time}</t></is></c>` +
+          `<c r="H${excelRow}" s="${dataS}"><v>${totalQs}</v></c>` +
+          `</row>`;
+      });
+
+      const spacerRow = 5 + sorted.length;
+      const avgRow    = spacerRow + 1;
+      const firstData = 5;
+      const lastData  = spacerRow - 1;
+
+      dataRowsXml += `<row r="${spacerRow}" ht="6" customHeight="1">` +
+        'ABCDEFGH'.split('').map(c => `<c r="${c}${spacerRow}" s="4"/>`).join('') +
+        `</row>`;
+
+      dataRowsXml += `<row r="${avgRow}" ht="22" customHeight="1">` +
+        `<c r="A${avgRow}" s="5" t="inlineStr"><is><t>Class Average</t></is></c>` +
+        `<c r="B${avgRow}" s="19"/>` +
+        `<c r="C${avgRow}" s="18"><f>AVERAGE(C${firstData}:C${lastData})</f><v>0</v></c>` +
+        `<c r="D${avgRow}" s="19"/><c r="E${avgRow}" s="19"/><c r="F${avgRow}" s="19"/>` +
+        `<c r="G${avgRow}" s="19"/><c r="H${avgRow}" s="19"/>` +
+        `</row>`;
+
+      for (let tr = avgRow+1; tr <= avgRow+3; tr++) {
+        dataRowsXml += `<row r="${tr}" ht="6" customHeight="1">` +
+          'ABCDEFGH'.split('').map(c => `<c r="${c}${tr}" s="4"/>`).join('') +
+          `</row>`;
+      }
+
+      // Replace everything after the header row (row 4) up to </sheetData>
+      sheetXml = sheetXml.replace(
+        /(<row r="4"[\s\S]*?<\/row>)[\s\S]*?(<\/sheetData>)/,
+        '$1' + dataRowsXml + '$2'
+      );
+
+      sheetXml = sheetXml.replace(
+        '<mergeCell ref="A9:B9"/>',
+        `<mergeCell ref="A\${avgRow}:B\${avgRow}"/>`
+      );
+      // Update sheet range
+      sheetXml = sheetXml.replace(/(<dimension ref="A1:H)\d+("\/>)/, `$1\${avgRow + 3}$2`);
+
+      zip.file('xl/worksheets/sheet1.xml', sheetXml);
+      return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    });
+  }).then(blob => {
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = (title || 'Results').replace(/[^a-z0-9 _-]/gi, '_') + '_results.xlsx';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Export downloaded!', 'success');
+  }).catch(err => {
+    console.error(err);
+    showToast('Export failed: ' + err.message, 'error');
+  });
+}
+
+initPage();
+</script>
+</body>
+</html>

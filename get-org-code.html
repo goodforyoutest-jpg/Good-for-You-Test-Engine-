@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<title>Get Organisation Code — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin   { to{transform:rotate(360deg)} }
+@keyframes stepIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+:root {
+  --green:#1A3A2A; --green-lt:#265240; --green-dim:#0F2318;
+  --green-mist:rgba(26,58,42,.07); --green-border:rgba(26,58,42,.18);
+  --gold:#B8962E; --gold-lt:#D4AC3A;
+  --ivory:#F6F3EC; --ivory-2:#EDE9DF; --ivory-3:#DDD8CC; --muted:#6B7280;
+}
+
+.navbar {
+  position:sticky;top:0;z-index:600;background:var(--green);
+  border-bottom:2px solid var(--gold);height:60px;
+  display:flex;align-items:center;gap:10px;padding:0 16px;
+  box-shadow:0 2px 16px rgba(0,0,0,.16);
+}
+.nav-logo-img { width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid var(--gold);flex-shrink:0; }
+.nav-wordmark { flex:1;min-width:0; }
+.nav-wordmark-name { font-family:'Libre Baskerville',serif;font-size:.88rem;font-weight:700;color:#fff;line-height:1.15; }
+.nav-wordmark-name em { font-style:italic;color:#D4AC3A; }
+.nav-wordmark-tag { font-size:.5rem;color:rgba(255,255,255,.38);letter-spacing:.14em;text-transform:uppercase; }
+.nav-back { display:inline-flex;align-items:center;gap:6px;font-size:.75rem;color:rgba(255,255,255,.65);text-decoration:none;padding:5px 10px;border-radius:4px;transition:.2s; }
+.nav-back:hover { color:#fff;background:rgba(255,255,255,.1); }
+
+.page-container { min-height:calc(100vh - 60px);background:var(--ivory);padding:40px 16px 60px;display:flex;flex-direction:column;align-items:center; }
+
+.form-header { text-align:center;max-width:560px;animation:fadeUp .55s ease both;margin-bottom:36px; }
+.form-eyebrow { display:inline-flex;align-items:center;gap:8px;font-size:.6rem;color:var(--green);letter-spacing:.22em;text-transform:uppercase;font-weight:700;margin-bottom:14px; }
+.eyebrow-rule { width:18px;height:1.5px;background:var(--gold); }
+.form-title { font-family:'Libre Baskerville',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;color:var(--green-dim);line-height:1.1;margin-bottom:8px; }
+.form-title em { font-style:italic;color:var(--green); }
+.form-subtitle { font-size:.88rem;color:var(--muted);line-height:1.7;max-width:440px;margin:0 auto; }
+
+.form-card { background:#fff;border:1px solid var(--ivory-3);border-radius:8px;width:100%;max-width:560px;box-shadow:0 4px 32px rgba(0,0,0,.07);animation:fadeUp .55s .08s ease both;overflow:hidden; }
+.form-card-header { background:var(--green);padding:18px 24px;display:flex;align-items:center;gap:12px; }
+.form-card-header-icon { width:36px;height:36px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.form-card-header h2 { font-family:'Libre Baskerville',serif;font-size:1rem;font-weight:700;color:#fff;line-height:1.2; }
+.form-card-header p { font-size:.65rem;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;margin-top:2px; }
+
+.form-body { padding:24px; }
+.field-group { margin-bottom:18px; }
+.field-label { display:block;font-size:.72rem;font-weight:700;color:var(--green-dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px; }
+.field-required { color:var(--gold);margin-left:2px; }
+.field-input { width:100%;padding:11px 14px;border:1.5px solid var(--ivory-3);border-radius:5px;font-family:'Inter',sans-serif;font-size:.9rem;color:var(--green-dim);background:#fff;transition:border-color .2s,box-shadow .2s;appearance:none;box-sizing:border-box; }
+.field-input:focus { border-color:var(--green);outline:none;box-shadow:0 0 0 3px var(--green-mist); }
+.field-input::placeholder { color:#adb5bd; }
+.field-input.error { border-color:#dc3545; }
+.field-hint { font-size:.67rem;color:var(--muted);margin-top:5px; }
+.field-divider { height:1px;background:var(--ivory-3);margin:20px 0; }
+
+.subjects-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px; }
+@media(max-width:400px){.subjects-grid{grid-template-columns:1fr;}}
+.subject-chip { display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--ivory-3);border-radius:5px;cursor:pointer;transition:all .18s;font-size:.8rem;color:var(--green-dim);font-weight:500;user-select:none; }
+.subject-chip:hover { border-color:var(--green);background:var(--green-mist); }
+.subject-chip input { accent-color:var(--green);width:14px;height:14px;flex-shrink:0; }
+.subject-chip.checked { border-color:var(--green);background:var(--green-mist);color:var(--green);font-weight:700; }
+
+.submit-btn { width:100%;padding:14px 24px;background:linear-gradient(135deg,var(--green),var(--green-lt));color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .22s;box-shadow:0 4px 16px rgba(26,58,42,.25); }
+.submit-btn:hover:not(:disabled) { transform:translateY(-1px);box-shadow:0 6px 24px rgba(26,58,42,.38); }
+.submit-btn:disabled { opacity:.6;cursor:not-allowed; }
+.submit-note { text-align:center;font-size:.7rem;color:var(--muted);margin-top:10px;line-height:1.6; }
+.btn-spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none; }
+
+/* Processing */
+.processing-panel { display:none;padding:28px 24px; }
+.processing-panel.show { display:block; }
+.processing-title { font-family:'Libre Baskerville',serif;font-size:1.1rem;font-weight:700;color:var(--green-dim);margin-bottom:4px; }
+.processing-subtitle { font-size:.75rem;color:var(--muted);margin-bottom:24px;line-height:1.5; }
+.steps-list { display:flex;flex-direction:column; }
+.step-item { display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid var(--ivory-3);opacity:.3;transition:opacity .4s; }
+.step-item:last-child { border-bottom:none; }
+.step-item.active { opacity:1;animation:stepIn .3s ease both; }
+.step-item.done { opacity:.65; }
+.step-indicator { width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--ivory-2);border:1.5px solid var(--ivory-3);margin-top:1px;transition:all .3s; }
+.step-item.active .step-indicator { background:var(--green);border-color:var(--green); }
+.step-item.done .step-indicator { background:var(--green-mist);border-color:var(--green); }
+.step-spinner { width:12px;height:12px;border:1.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none; }
+.step-check { display:none;width:12px;height:12px; }
+.step-dot { width:8px;height:8px;border-radius:50%;background:var(--ivory-3); }
+.step-item.active .step-dot { display:none; }
+.step-item.active .step-spinner { display:block; }
+.step-item.done .step-dot { display:none; }
+.step-item.done .step-spinner { display:none; }
+.step-item.done .step-check { display:block; }
+.step-content { flex:1;min-width:0;padding-top:2px; }
+.step-label { font-size:.82rem;font-weight:700;color:var(--green-dim);line-height:1.3; }
+.step-desc { font-size:.7rem;color:var(--muted);margin-top:2px;line-height:1.5; }
+.step-item.active .step-label { color:var(--green); }
+
+/* Success */
+.success-screen { display:none;padding:32px 24px; }
+.success-screen.show { display:block; }
+.form-body.hidden { display:none; }
+.success-header { text-align:center;margin-bottom:24px; }
+.success-icon-wrap { width:56px;height:56px;border-radius:50%;background:var(--green-mist);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 14px; }
+.success-title { font-family:'Libre Baskerville',serif;font-size:1.4rem;font-weight:700;color:var(--green-dim);margin-bottom:6px; }
+.success-msg { font-size:.82rem;color:var(--muted);line-height:1.7;max-width:360px;margin:0 auto; }
+
+.credentials-grid { display:flex;flex-direction:column;gap:10px;margin-bottom:22px; }
+.cred-block { background:var(--green);border-radius:6px;padding:14px 18px;border:1.5px solid rgba(212,172,58,.3); }
+.cred-block.highlight { border-color:var(--gold);box-shadow:0 4px 20px rgba(26,58,42,.25); }
+.cred-label { font-size:.55rem;color:rgba(255,255,255,.45);letter-spacing:.2em;text-transform:uppercase;margin-bottom:5px; }
+.cred-value { font-family:'Libre Baskerville',serif;font-size:1.5rem;font-weight:700;color:#D4AC3A;letter-spacing:.1em;word-break:break-all; }
+.cred-block:not(.highlight) .cred-value { font-size:.95rem;font-weight:600;letter-spacing:.02em;font-family:'Inter',sans-serif;color:rgba(255,255,255,.9); }
+.cred-copy { display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.62rem;color:rgba(255,255,255,.4);cursor:pointer;border:none;background:none;padding:0;font-family:'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:color .2s; }
+.cred-copy:hover { color:rgba(255,255,255,.75); }
+
+.save-warning { background:#fffbf0;border:1.5px solid rgba(184,150,46,.35);border-radius:5px;padding:12px 16px;margin-bottom:20px;font-size:.75rem;color:#7a6020;line-height:1.6; }
+.save-warning strong { color:var(--gold);display:block;margin-bottom:2px;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase; }
+
+.login-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 24px;background:linear-gradient(135deg,var(--green),var(--green-lt));color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;text-decoration:none;box-shadow:0 4px 16px rgba(26,58,42,.25);transition:all .22s;margin-bottom:10px; }
+.login-btn:hover { transform:translateY(-1px);box-shadow:0 6px 24px rgba(26,58,42,.38); }
+.wa-share-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 24px;background:#25D366;color:#fff;border:none;border-radius:5px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;text-decoration:none;transition:all .22s;box-shadow:0 4px 14px rgba(37,211,102,.25); }
+.wa-share-btn:hover { background:#1ebe5d; }
+.back-link { display:block;text-align:center;margin-top:14px;font-size:.75rem;color:var(--green);text-decoration:none;transition:.2s; }
+.back-link:hover { text-decoration:underline; }
+
+.error-banner { display:none;background:#fff5f5;border:1.5px solid #dc3545;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:.82rem;color:#dc3545;line-height:1.5; }
+.error-banner.show { display:block; }
+
+.trust-strip { display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:560px;margin-top:24px;animation:fadeUp .55s .16s ease both; }
+.trust-item { display:inline-flex;align-items:center;gap:5px;font-size:.65rem;color:var(--green);font-weight:700;padding:4px 12px;background:var(--green-mist);border:1px solid var(--green-border);border-radius:2px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="index.html"><img src="android-chrome-512x512.png" alt="Good for You" class="nav-logo-img"></a>
+  <div class="nav-wordmark">
+    <div class="nav-wordmark-name">Good <em>for</em> You</div>
+    <div class="nav-wordmark-tag">Test Engine v3.0</div>
+  </div>
+  <a class="nav-back" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back
+  </a>
+</nav>
+
+<div class="page-container">
+
+  <div class="form-header">
+    <div class="form-eyebrow"><span class="eyebrow-rule"></span>For Coaching Institutes<span class="eyebrow-rule"></span></div>
+    <h1 class="form-title">Get Your <em>Organisation</em> Code</h1>
+    <p class="form-subtitle">Fill in your institute details. Your org code and admin account will be created instantly.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="form-card-header">
+      <div class="form-card-header-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AC3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div>
+        <h2>Institute Registration</h2>
+        <p>AI-powered · Instant setup</p>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-body" id="formBody">
+      <div class="error-banner" id="errorBanner"></div>
+
+      <div class="field-group">
+        <label class="field-label" for="orgName">Organisation Name <span class="field-required">*</span></label>
+        <input class="field-input" type="text" id="orgName" placeholder="e.g. Shri Ram Coaching Centre" required>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="strength">Student Strength <span class="field-required">*</span></label>
+        <select class="field-input" id="strength" required>
+          <option value="" disabled selected>Select approximate student count</option>
+          <option value="1-50">1 – 50 students</option>
+          <option value="51-150">51 – 150 students</option>
+          <option value="151-300">151 – 300 students</option>
+          <option value="301-500">301 – 500 students</option>
+          <option value="500+">500+ students</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Subjects Taught <span class="field-required">*</span></label>
+        <div class="subjects-grid">
+          <label class="subject-chip"><input type="checkbox" value="Maths"> Maths</label>
+          <label class="subject-chip"><input type="checkbox" value="Accounts"> Accounts</label>
+          <label class="subject-chip"><input type="checkbox" value="Economics"> Economics</label>
+          <label class="subject-chip"><input type="checkbox" value="Law"> Law</label>
+          <label class="subject-chip"><input type="checkbox" value="English"> English</label>
+          <label class="subject-chip"><input type="checkbox" value="Science"> Science</label>
+          <label class="subject-chip"><input type="checkbox" value="Commerce"> Commerce</label>
+          <label class="subject-chip"><input type="checkbox" value="Other"> Other</label>
+        </div>
+        <p class="field-hint">Select all that apply</p>
+      </div>
+
+      <div class="field-divider"></div>
+
+      <div class="field-group">
+        <label class="field-label" for="contact">WhatsApp Number <span class="field-required">*</span></label>
+        <input class="field-input" type="tel" id="contact" placeholder="e.g. 9876543210" required>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="email">Email Address <span class="field-required">*</span></label>
+        <input class="field-input" type="email" id="email" placeholder="director@yourcoaching.com" required>
+        <p class="field-hint">Your admin account will be created with this email</p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="city">City / Location</label>
+        <input class="field-input" type="text" id="city" placeholder="e.g. Pune, Maharashtra">
+      </div>
+
+      <div class="field-divider"></div>
+
+      <button class="submit-btn" id="submitBtn" onclick="submitForm()">
+        <span id="btnText">Register My Institute</span>
+        <div class="btn-spinner" id="btnSpinner"></div>
+        <svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <p class="submit-note">Your org code and admin login are created instantly. No manual steps required.</p>
+    </div>
+
+    <!-- PROCESSING -->
+    <div class="processing-panel" id="processingPanel">
+      <div class="processing-title">Setting up your institute</div>
+      <div class="processing-subtitle">Please wait while we configure everything. This takes a few seconds.</div>
+      <div class="steps-list">
+
+        <div class="step-item" id="step-1">
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-spinner"></div>
+            <svg class="step-check" viewBox="0 0 12 12" fill="none" stroke="#1A3A2A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 6 4.5 10 11 2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="step-label">Analysing institute name</div>
+            <div class="step-desc">Reading your institute name and preparing for code generation</div>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-2">
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-spinner"></div>
+            <svg class="step-check" viewBox="0 0 12 12" fill="none" stroke="#1A3A2A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 6 4.5 10 11 2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="step-label">Generating organisation code</div>
+            <div class="step-desc">AI is deriving a unique code based on your institute name</div>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-3">
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-spinner"></div>
+            <svg class="step-check" viewBox="0 0 12 12" fill="none" stroke="#1A3A2A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 6 4.5 10 11 2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="step-label">Verifying code uniqueness</div>
+            <div class="step-desc">Checking that your org code is not already in use</div>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-4">
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-spinner"></div>
+            <svg class="step-check" viewBox="0 0 12 12" fill="none" stroke="#1A3A2A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 6 4.5 10 11 2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="step-label">Registering organisation</div>
+            <div class="step-desc">Saving your institute to the platform database</div>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-5">
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-spinner"></div>
+            <svg class="step-check" viewBox="0 0 12 12" fill="none" stroke="#1A3A2A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 6 4.5 10 11 2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="step-label">Creating admin account</div>
+            <div class="step-desc">Setting up your login credentials with admin access</div>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-6">
+          <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-spinner"></div>
+            <svg class="step-check" viewBox="0 0 12 12" fill="none" stroke="#1A3A2A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 6 4.5 10 11 2"/></svg>
+          </div>
+          <div class="step-content">
+            <div class="step-label">Linking org code to account</div>
+            <div class="step-desc">Attaching your organisation code to your admin profile</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-header">
+        <div class="success-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1A3A2A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="success-title">Institute Ready</div>
+        <p class="success-msg">Your organisation and admin account have been created. Save your credentials before leaving this page.</p>
+      </div>
+
+      <div class="credentials-grid">
+        <div class="cred-block highlight">
+          <div class="cred-label">Organisation Code</div>
+          <div class="cred-value" id="displayOrgCode">——</div>
+          <button class="cred-copy" onclick="copyField('displayOrgCode',this)">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy code</span>
+          </button>
+        </div>
+        <div class="cred-block">
+          <div class="cred-label">Admin Email</div>
+          <div class="cred-value" id="displayEmail">——</div>
+          <button class="cred-copy" onclick="copyField('displayEmail',this)">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy email</span>
+          </button>
+        </div>
+        <div class="cred-block">
+          <div class="cred-label">Password</div>
+          <div class="cred-value" id="displayPassword">——</div>
+          <button class="cred-copy" onclick="copyField('displayPassword',this)">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy password</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="save-warning">
+        <strong>Important — Save your credentials</strong>
+        This is the only time your password will be shown. Note it down before leaving this page. You can change it after logging in from the admin panel.
+      </div>
+
+      <a class="login-btn" href="admin.html">
+        Go to Admin Login
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a class="wa-share-btn" id="waShareBtn" href="#" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.552 4.113 1.513 5.847L0 24l6.313-1.496C8.015 23.478 9.977 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.653-.496-5.187-1.363l-.371-.217-3.748.888.92-3.644-.24-.388A9.955 9.955 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Share Org Code on WhatsApp
+      </a>
+      <a class="back-link" href="index.html">Back to Home</a>
+    </div>
+
+  </div><!-- /form-card -->
+
+  <div class="trust-strip">
+    <span class="trust-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>AI-Generated Code</span>
+    <span class="trust-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Admin Account Included</span>
+    <span class="trust-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Instant Setup</span>
+    <span class="trust-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Private Org Data</span>
+  </div>
+
+</div>
+
+<script>
+const BACKEND = 'https://axis-backend-n5gc.onrender.com';
+
+document.querySelectorAll('.subject-chip input').forEach(cb => {
+  cb.addEventListener('change', () => cb.closest('.subject-chip').classList.toggle('checked', cb.checked));
+});
+
+const STEP_DELAYS = [0, 900, 1900, 3000, 4400, 6000];
+
+function activateStep(n) {
+  if (n > 1) {
+    const prev = document.getElementById(`step-${n-1}`);
+    if (prev) { prev.classList.remove('active'); prev.classList.add('done'); }
+  }
+  const el = document.getElementById(`step-${n}`);
+  if (el) el.classList.add('active');
+}
+
+function completeAllSteps() {
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById(`step-${i}`);
+    if (el) { el.classList.remove('active'); el.classList.add('done'); }
+  }
+}
+
+function resetSteps() {
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById(`step-${i}`);
+    if (el) el.classList.remove('active','done');
+  }
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBanner');
+  b.textContent = msg; b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 7000);
+}
+
+async function submitForm() {
+  document.getElementById('errorBanner').classList.remove('show');
+
+  const orgName  = document.getElementById('orgName').value.trim();
+  const strength = document.getElementById('strength').value;
+  const contact  = document.getElementById('contact').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const city     = document.getElementById('city').value.trim();
+  const subjects = Array.from(document.querySelectorAll('.subjects-grid input:checked')).map(c => c.value);
+
+  let valid = true;
+  [['orgName',orgName],['strength',strength],['contact',contact],['email',email]].forEach(([id,val]) => {
+    const el = document.getElementById(id);
+    if (!val) { el.classList.add('error'); valid = false; }
+    else el.classList.remove('error');
+  });
+  if (subjects.length === 0) { showError('Please select at least one subject.'); return; }
+  if (!valid) { showError('Please fill all required fields.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('btnText').textContent = 'Processing...';
+  document.getElementById('btnIcon').style.display = 'none';
+  document.getElementById('btnSpinner').style.display = 'block';
+  document.getElementById('formBody').classList.add('hidden');
+  document.getElementById('processingPanel').classList.add('show');
+
+  const timers = STEP_DELAYS.map((delay, i) => setTimeout(() => activateStep(i + 1), delay));
+
+  try {
+    const res  = await fetch(`${BACKEND}/api/org/request`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ orgName, strength, subjects, contact, email, city }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Something went wrong. Please try again.');
+
+    timers.forEach(clearTimeout);
+    completeAllSteps();
+
+    setTimeout(() => {
+      document.getElementById('processingPanel').classList.remove('show');
+      document.getElementById('displayOrgCode').textContent  = data.orgCode;
+      document.getElementById('displayEmail').textContent    = data.email;
+      document.getElementById('displayPassword').textContent = data.password;
+      const waText = encodeURIComponent(`Hello,\n\nOur institute "${orgName}" is now live on Good for You Test Engine.\n\nOrg Code: ${data.orgCode}\n\nLogin at: https://goodforyoutest.netlify.app/admin.html`);
+      document.getElementById('waShareBtn').href = `https://wa.me/?text=${waText}`;
+      document.getElementById('successScreen').classList.add('show');
+    }, 700);
+
+  } catch (err) {
+    timers.forEach(clearTimeout);
+    document.getElementById('processingPanel').classList.remove('show');
+    document.getElementById('formBody').classList.remove('hidden');
+    resetSteps();
+    showError(err.message || 'Something went wrong. Please try again.');
+    btn.disabled = false;
+    document.getElementById('btnText').textContent = 'Register My Institute';
+    document.getElementById('btnIcon').style.display = '';
+    document.getElementById('btnSpinner').style.display = 'none';
+  }
+}
+
+function copyField(id, btn) {
+  const val = document.getElementById(id).textContent.trim();
+  if (!val || val === '——') return;
+  const span = btn.querySelector('span');
+  const orig = span.textContent;
+  navigator.clipboard.writeText(val).then(() => {
+    span.textContent = 'Copied'; setTimeout(() => { span.textContent = orig; }, 2000);
+  }).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = val; document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+    span.textContent = 'Copied'; setTimeout(() => { span.textContent = orig; }, 2000);
+  });
+}
+</script>
+</body>
+</html>

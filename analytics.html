@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Analytics — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+
+.ana-layout { max-width:860px; margin:0 auto; padding:32px 20px 80px; }
+
+/* Summary Cards */
+.summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:28px; }
+.sum-card {
+  background:#fff; border:1px solid var(--ivory-3);
+  border-bottom:3px solid var(--green);
+  padding:18px 16px; text-align:center; transition:all .18s;
+}
+.sum-card:hover { border-bottom-color:#B8962E; transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.08); }
+.sum-num { font-family:'Libre Baskerville',serif; font-size:1.8rem; font-weight:700; color:var(--green); }
+.sum-lbl { font-size:.65rem; color:var(--faint); text-transform:uppercase; letter-spacing:.1em; margin-top:4px; }
+
+/* Chart area */
+.chart-card {
+  background:#fff; border:1px solid var(--ivory-3);
+  padding:18px; margin-bottom:14px;
+}
+.chart-card h4 {
+  font-size:.62rem; color:var(--green); letter-spacing:.14em;
+  text-transform:uppercase; font-weight:700; margin-bottom:16px;
+  padding-bottom:10px; border-bottom:1px solid var(--ivory-3);
+}
+
+/* Score Trend Chart */
+.trend-chart { position:relative; height:160px; }
+.trend-labels { display:flex; justify-content:space-between; font-size:.62rem; color:var(--muted); margin-top:6px; }
+.trend-svg { width:100%; height:100%; overflow:visible; }
+
+/* Section Chart */
+.sec-chart-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.sec-chart-label { width:140px; font-size:.78rem; color:var(--text-mid); flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sec-chart-track { flex:1; height:22px; background:var(--ivory-3); overflow:hidden; position:relative; }
+.sec-chart-fill { height:100%; display:flex; align-items:center; padding-left:8px; font-size:.72rem; font-weight:700; color:#fff; transition:width 1.2s ease; }
+.sec-chart-pct { font-size:.75rem; color:var(--muted); min-width:36px; text-align:right; }
+
+/* Result History */
+.hist-row {
+  display:flex; align-items:center; gap:14px; padding:12px 16px;
+  border-bottom:1px solid var(--ivory-3); cursor:pointer; transition:background .15s;
+}
+.hist-row:last-child { border-bottom:none; }
+.hist-row:hover { background:var(--green-mist); }
+.hist-score-badge {
+  width:52px; height:52px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Libre Baskerville',serif; font-size:1.05rem; font-weight:700;
+}
+.hist-info { flex:1; min-width:0; }
+.hist-title { font-weight:700; font-size:.88rem; color:var(--text); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hist-meta  { font-size:.72rem; color:var(--muted); }
+.hist-right { text-align:right; flex-shrink:0; }
+.hist-rank  { font-size:.72rem; color:var(--muted); }
+.hist-rank strong { color:var(--green); font-size:.9rem; font-weight:800; }
+
+.empty-state { text-align:center; padding:50px 20px; color:var(--muted); }
+.empty-state .es-icon { margin-bottom:12px; display:flex; justify-content:center; color:var(--ivory-4); }
+
+@media(max-width:600px) {
+  .summary-grid { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn"><span></span><span></span><span></span></button>
+  <span class="header-ca-label" id="headerCaLabel">Good for You</span>
+  <span class="header-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Analytics</span>
+</header>
+
+<div class="page-wrap">
+<div class="ana-layout">
+
+  <div class="section-label"><span>Your Performance</span><div class="section-label-line"></div></div>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="sum-card"><div class="sum-num" id="anTotal">—</div><div class="sum-lbl">Tests Taken</div></div>
+    <div class="sum-card"><div class="sum-num" id="anAvg">—</div><div class="sum-lbl">Avg Score</div></div>
+    <div class="sum-card"><div class="sum-num" id="anBest">—</div><div class="sum-lbl">Best Score</div></div>
+    <div class="sum-card"><div class="sum-num" id="anAcc">—</div><div class="sum-lbl">Avg Accuracy</div></div>
+  </div>
+
+  <!-- Score Trend -->
+  <div class="chart-card">
+    <h4>Score Trend (Last 10 Tests)</h4>
+    <div class="trend-chart" id="trendChart">
+      <div class="loading-screen" style="min-height:80px;"><div class="spinner"></div></div>
+    </div>
+    <div class="trend-labels" id="trendLabels"></div>
+  </div>
+
+  <!-- Section Performance -->
+  <div class="chart-card" id="secChartCard">
+    <h4>Section Performance</h4>
+    <div id="secChartContent"><div class="loading-screen" style="min-height:80px;"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- Result History -->
+  <div class="section-label"><span>Test History</span><div class="section-label-line"></div></div>
+  <div class="panel-card">
+    <div id="historyContent">
+      <div class="loading-screen" style="min-height:200px;"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script>
+initFirebase();
+initBgCanvas();
+injectDrawer('analytics');
+
+async function initAnalytics() {
+  const user = await requireAuth();
+  if (!user) return;
+  injectHeaderUser();
+  populateDrawerUser();
+
+  const snap = await window.db.collection('results')
+    .where('userId','==',user.uid).limit(50).get();
+
+  const results = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+    const ta = a.createdAt?.toDate?.() || new Date(0);
+    const tb = b.createdAt?.toDate?.() || new Date(0);
+    return tb - ta;
+  });
+
+  if (results.length===0) {
+    document.getElementById('trendChart').innerHTML = '<div class="empty-state"><div class="es-icon" style="font-size:0;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><p>No tests taken yet.</p></div>';
+    document.getElementById('secChartContent').innerHTML = '<div class="empty-state"><p>Take some tests to see section analytics.</p></div>';
+    document.getElementById('historyContent').innerHTML  = '<div class="empty-state"><div class="es-icon" style="font-size:0;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><p>No test history yet.</p></div>';
+    return;
+  }
+
+  // Summary stats
+  const total = results.length;
+  const avg   = Math.round(results.reduce((s,r)=>s+(r.percentage||0),0)/total);
+  const best  = Math.max(...results.map(r=>r.percentage||0));
+  const acc   = Math.round(results.reduce((s,r)=>s+(r.accuracy||0),0)/total);
+  document.getElementById('anTotal').textContent = total;
+  document.getElementById('anAvg').textContent   = avg+'%';
+  document.getElementById('anBest').textContent  = best+'%';
+  document.getElementById('anAcc').textContent   = acc+'%';
+
+  // Score trend (last 10, reversed for chronological order)
+  const trend = [...results].reverse().slice(-10);
+  renderTrendChart(trend);
+
+  // Section stats aggregate
+  const secAgg = {};
+  results.forEach(r => {
+    Object.entries(r.sectionStats||{}).forEach(([sec,stats])=>{
+      if(!secAgg[sec]) secAgg[sec]={c:0,t:0};
+      secAgg[sec].c += stats.c||0;
+      secAgg[sec].t += stats.t||0;
+    });
+  });
+  renderSectionChart(secAgg);
+
+  // History list
+  renderHistory(results);
+}
+
+function renderTrendChart(trend) {
+  if (trend.length<2) {
+    document.getElementById('trendChart').innerHTML='<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:20px;">Need at least 2 tests to show trend.</div>';
+    return;
+  }
+  const W=600; const H=140; const pad=20;
+  const scores = trend.map(r=>r.percentage||0);
+  const min=Math.max(0,Math.min(...scores)-10);
+  const max=Math.min(100,Math.max(...scores)+10);
+  const xStep=(W-pad*2)/(scores.length-1);
+  const yScale=(H-pad*2)/(max-min||1);
+
+  const points = scores.map((s,i)=>[pad+i*xStep, H-pad-(s-min)*yScale]);
+  const polyline = points.map(([x,y])=>`${x},${y}`).join(' ');
+  const areaPath = `M${points[0][0]},${H-pad} ` + points.map(([x,y])=>`L${x},${y}`).join(' ') + ` L${points[points.length-1][0]},${H-pad} Z`;
+
+  const dots = points.map(([x,y],i)=>`
+    <circle cx="${x}" cy="${y}" r="4" fill="var(--green)" stroke="#fff" stroke-width="2"/>
+    <title>${scores[i]}%</title>`).join('');
+
+  document.getElementById('trendChart').innerHTML=`
+    <svg class="trend-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(26,74,46,.15)"/>
+          <stop offset="100%" stop-color="rgba(26,74,46,0)"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid lines -->
+      ${[0,25,50,75,100].filter(v=>v>=min&&v<=max).map(v=>{
+        const y=H-pad-(v-min)*yScale;
+        return `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="rgba(26,74,46,.08)" stroke-width="1"/>
+                <text x="${pad-4}" y="${y+4}" text-anchor="end" font-size="10" fill="rgba(100,120,100,.5)">${v}</text>`;
+      }).join('')}
+      <!-- Area -->
+      <path d="${areaPath}" fill="url(#areaGrad)"/>
+      <!-- Line -->
+      <polyline points="${polyline}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- Dots -->
+      ${dots}
+    </svg>`;
+
+  document.getElementById('trendLabels').innerHTML = trend.map(r=>
+    `<span>${formatDate(r.createdAt)}</span>`
+  ).join('');
+}
+
+function renderSectionChart(secAgg) {
+  const sections = Object.entries(secAgg);
+  if (sections.length===0) {
+    document.getElementById('secChartContent').innerHTML='<div style="color:var(--muted);font-size:.82rem;">No section data yet.</div>';
+    return;
+  }
+  const sorted = sections.map(([sec,{c,t}])=>({sec,pct:Math.round(c/t*100),c,t})).sort((a,b)=>b.pct-a.pct);
+  document.getElementById('secChartContent').innerHTML = sorted.map(({sec,pct,c,t})=>{
+    const color = pct>=75?'var(--green)':pct>=50?'#B8962E':'#DC2626';
+    return `
+      <div class="sec-chart-row">
+        <div class="sec-chart-label" title="${escHtml(sec)}">${escHtml(sec)}</div>
+        <div class="sec-chart-track">
+          <div class="sec-chart-fill" style="width:0%;background:${color};" data-width="${pct}">
+            ${pct>=20?pct+'%':''}
+          </div>
+        </div>
+        <div class="sec-chart-pct">${c}/${t}</div>
+      </div>`;
+  }).join('');
+  setTimeout(()=>{
+    document.querySelectorAll('.sec-chart-fill').forEach(el=>el.style.width=el.dataset.width+'%');
+  },200);
+}
+
+function renderHistory(results) {
+  document.getElementById('historyContent').innerHTML = results.map(r=>{
+    const pct   = r.percentage||0;
+    const color = pct>=75?'var(--green)':pct>=50?'#B8962E':'#DC2626';
+    const timeTxt = r.timeTaken ? formatTime(r.timeTaken) : '—';
+    return `
+      <div class="hist-row">
+        <div class="hist-score-badge" style="background:${color}22;border:1px solid ${color}44;color:${color};">
+          ${pct}%
+        </div>
+        <div class="hist-info">
+          <div class="hist-title">${escHtml(r.testTitle||'Custom Test')}</div>
+          <div class="hist-meta">${r.correct||0}/${r.total||0} correct · Accuracy ${r.accuracy||0}% · Time ${timeTxt}</div>
+        </div>
+        <div class="hist-right">
+          <div class="hist-rank">Rank <strong>${r.rank?'#'+r.rank:'—'}</strong></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:2px;">${formatDate(r.createdAt)}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+initAnalytics();
+</script>
+</body>
+</html>

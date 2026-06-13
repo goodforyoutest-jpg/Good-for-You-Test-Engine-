@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Result — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+
+.result-layout { max-width:700px; margin:0 auto; padding:32px 20px 80px; }
+
+.result-hero {
+  text-align:center; padding:36px 24px 28px;
+  background:#fff; border:1px solid var(--ivory-3);
+  border-top:4px solid var(--green);
+  margin-bottom:16px;
+}
+.score-circle-wrap { position:relative; width:120px; height:120px; margin:0 auto 18px; }
+.score-circle-wrap svg { transform:rotate(-90deg); }
+.score-inner { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.res-test-title { font-family:'Libre Baskerville',serif; font-size:1.25rem; font-weight:700; color:var(--green-dim); margin-bottom:5px; }
+.res-date { font-size:.76rem; color:var(--muted); margin-bottom:14px; }
+
+.res-breakdown { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:18px; }
+.res-item { background:var(--ivory-2); border:1px solid var(--ivory-3); padding:12px 8px; text-align:center; }
+.res-item .ri-val { font-family:'Libre Baskerville',serif; font-size:1.4rem; font-weight:700; }
+.res-item .ri-lbl { font-size:.6rem; color:var(--faint); text-transform:uppercase; letter-spacing:.08em; margin-top:3px; }
+.res-correct .ri-val { color:var(--green); }
+.res-wrong   .ri-val { color:#DC2626; }
+.res-skip    .ri-val { color:var(--faint); }
+.res-total   .ri-val { color:#B8962E; }
+
+.sec-perf-row { margin-bottom:14px; }
+.sec-perf-label { display:flex; justify-content:space-between; margin-bottom:5px; font-size:.78rem; color:var(--text); }
+.sec-perf-pct { color:var(--muted); font-size:.72rem; }
+.sec-perf-bar-wrap { height:5px; background:var(--ivory-3); overflow:hidden; }
+.sec-perf-bar { height:100%; background:var(--green); width:0; transition:width 1.2s ease; }
+
+.meta-row { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.meta-chip { background:var(--green-mist); border:1px solid var(--green-border); padding:5px 16px; font-size:.75rem; color:var(--muted); display:inline-flex; align-items:center; gap:5px; }
+.meta-chip strong { color:var(--green); font-weight:800; }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn"><span></span><span></span><span></span></button>
+  <span class="header-ca-label" id="headerCaLabel">Good for You</span>
+  <span class="header-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Result</span>
+</header>
+
+<div class="page-wrap">
+<div class="result-layout">
+
+  <div id="mainContent">
+    <div class="loading-screen"><div class="spinner"></div><span>Loading result…</span></div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script>
+initFirebase();
+initBgCanvas();
+injectDrawer('results');
+injectHeaderUser();
+populateDrawerUser();
+
+async function loadResult() {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const resultId = sessionStorage.getItem('viewResultId');
+  if (!resultId) { window.location.href='dashboard.html'; return; }
+
+  try {
+    const snap = await window.db.collection('results').doc(resultId).get();
+    if (!snap.exists) { showToast('Result not found.','error'); setTimeout(()=>window.location.href='dashboard.html',1500); return; }
+
+    const r = snap.data();
+    const pct  = r.percentage||0;
+    const color= pct>=75?'var(--green)':pct>=50?'#B8962E':'#DC2626';
+    const circ = 2*Math.PI*50;
+    const offset = circ*(1-pct/100);
+
+    let msg = '';
+    if(pct>=90) msg='🏆 Outstanding performance!';
+    else if(pct>=75) msg='🌟 Great work! Keep it up!';
+    else if(pct>=60) msg='📚 Good attempt! Review and retry.';
+    else if(pct>=40) msg='💪 Keep going! Focus on weak areas.';
+    else msg="🎯 Don't give up! Revise and try again.";
+
+    // Section bars
+    const sections = Object.entries(r.sectionStats||{});
+    const secHtml = sections.length>1 ? `
+      <div class="panel-card">
+        <div class="panel-card-header"><span>Section Performance</span></div>
+        <div style="padding:16px 20px;">
+          ${sections.map(([sec,{c,t}])=>{
+            const sp=Math.round(c/t*100);
+            return `<div class="sec-perf-row">
+              <div class="sec-perf-label"><span>${escHtml(sec)}</span><span class="sec-perf-pct">${c}/${t} · ${sp}%</span></div>
+              <div class="sec-perf-bar-wrap"><div class="sec-perf-bar" data-width="${sp}"></div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : '';
+
+    document.getElementById('mainContent').innerHTML = `
+      <div class="result-hero">
+        <div class="res-test-title">${escHtml(r.testTitle||'Test Result')}</div>
+        <div class="res-date">${formatDate(r.createdAt)}</div>
+
+        <div class="score-circle-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--ivory-3)" stroke-width="9"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="${color}" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ}"
+              id="scoreRing" style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)"/>
+          </svg>
+          <div class="score-inner">
+            <span style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--green);">${r.correct||0}/${r.total||0}</span>
+            <span style="font-size:.82rem;color:var(--muted);">${pct}%</span>
+          </div>
+        </div>
+
+        <div style="font-size:.9rem;color:var(--muted);line-height:1.6;">${msg}</div>
+
+        <div class="res-breakdown">
+          <div class="res-item res-correct"><div class="ri-val">${r.correct||0}</div><div class="ri-lbl">Correct</div></div>
+          <div class="res-item res-wrong">  <div class="ri-val">${r.wrong||0}</div>  <div class="ri-lbl">Wrong</div></div>
+          <div class="res-item res-skip">   <div class="ri-val">${r.skipped||0}</div><div class="ri-lbl">Skipped</div></div>
+          <div class="res-item res-total">  <div class="ri-val">${r.total||0}</div>  <div class="ri-lbl">Total</div></div>
+        </div>
+
+        <div class="meta-row">
+          ${r.rank ? `<div class="meta-chip">Rank <strong>#${r.rank}</strong></div>` : ''}
+          <div class="meta-chip">Accuracy <strong>${r.accuracy||0}%</strong></div>
+          ${r.timeTaken ? `<div class="meta-chip">Time <strong>${formatTime(r.timeTaken)}</strong></div>` : ''}
+        </div>
+      </div>
+
+      ${secHtml}
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:20px;">
+        <button class="btn-secondary" onclick="history.back()">← Back</button>
+        <button class="btn-secondary" onclick="window.location.href='leaderboard.html'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>Leaderboard</button>
+        <button class="btn-secondary" onclick="window.location.href='analytics.html'"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Analytics</button>
+      </div>
+    `;
+
+    setTimeout(()=>{
+      const ring = document.getElementById('scoreRing');
+      if(ring) ring.style.strokeDashoffset = offset;
+      document.querySelectorAll('.sec-perf-bar').forEach(b=>b.style.width=b.dataset.width+'%');
+    },300);
+  } catch(e) {
+    document.getElementById('mainContent').innerHTML='<div class="empty-state"><p>Error loading result.</p></div>';
+    console.error(e);
+  }
+}
+
+loadResult();
+</script>
+</body>
+</html>

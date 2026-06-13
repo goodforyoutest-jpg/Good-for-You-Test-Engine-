@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Sign Up — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+
+/* ── RESET BODY FOR AUTH ── */
+body {
+  background: var(--ivory);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOP NAV BAR ── */
+.auth-navbar {
+  height: 58px;
+  background: var(--green);
+  border-bottom: 2px solid rgba(184,150,46,.45);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,.14);
+}
+.auth-navbar-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.auth-navbar-icon {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,.1);
+  border: 1.5px solid rgba(212,175,80,.4);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.auth-navbar-name {
+  font-family: 'Libre Baskerville', serif;
+  font-size: .9rem; font-weight: 700; color: #fff;
+}
+.auth-navbar-name em { font-style: italic; color: #D4AF50; }
+.auth-navbar-sep {
+  width: 1px; height: 18px;
+  background: rgba(255,255,255,.15);
+  margin-left: auto;
+}
+.auth-navbar-link {
+  font-size: .76rem; color: rgba(255,255,255,.6);
+  text-decoration: none; font-weight: 500;
+  padding: 6px 12px; border-radius: 4px;
+  transition: color .2s, background .2s;
+  margin-left: 8px;
+}
+.auth-navbar-link:hover { color: #fff; background: rgba(255,255,255,.08); }
+.auth-navbar-cta {
+  font-size: .76rem; font-weight: 700;
+  background: rgba(212,175,80,.18);
+  border: 1px solid rgba(212,175,80,.35);
+  color: #D4AF50; padding: 6px 16px; border-radius: 4px;
+  text-decoration: none; transition: all .2s; margin-left: 6px;
+}
+.auth-navbar-cta:hover { background: rgba(212,175,80,.28); color: #E8C97A; }
+
+/* ── PAGE BODY ── */
+.auth-page {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 44px 20px 52px;
+  position: relative;
+  overflow: hidden;
+}
+.auth-page::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--ivory-3) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ivory-3) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* ── AUTH CARD ── */
+.auth-card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 460px;
+  background: #fff;
+  border: 1.5px solid var(--ivory-3);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.04),
+    0 8px 32px rgba(0,0,0,.07),
+    0 24px 64px rgba(0,0,0,.06);
+  animation: fadeUp .5s ease both;
+  overflow: hidden;
+}
+.auth-card-accent {
+  height: 4px;
+  background: linear-gradient(90deg, var(--green) 0%, var(--green-lt) 60%, rgba(212,175,80,.6) 100%);
+}
+.auth-card-body {
+  padding: 36px 40px 32px;
+}
+@media(max-width: 480px) {
+  .auth-card-body { padding: 28px 22px 24px; }
+}
+
+/* ── CARD HEADER ── */
+.auth-card-header {
+  text-align: center;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ivory-2);
+}
+.auth-logo-circle {
+  width: 52px; height: 52px;
+  background: var(--green);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 16px rgba(26,74,46,.22);
+}
+.auth-card-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.4rem; font-weight: 700;
+  color: var(--green-dim); margin-bottom: 5px;
+}
+.auth-card-title em { font-style: italic; color: var(--green); }
+.auth-card-sub { font-size: .82rem; color: var(--muted); }
+
+/* ── ALERT MESSAGES ── */
+.auth-alert {
+  display: none;
+  align-items: flex-start; gap: 10px;
+  padding: 11px 14px; border-radius: 6px;
+  font-size: .82rem; font-weight: 500; line-height: 1.5;
+  margin-bottom: 20px;
+}
+.auth-alert.error {
+  background: rgba(185,28,28,.05);
+  border: 1px solid rgba(185,28,28,.2);
+  border-left: 3px solid #DC2626;
+  color: #B91C1C;
+}
+.auth-alert svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── FORM FIELDS ── */
+.field { margin-bottom: 16px; }
+.field-label {
+  display: block;
+  font-size: .7rem; font-weight: 700;
+  color: var(--text-mid);
+  letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.field-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--ivory);
+  border: 1.5px solid var(--ivory-3);
+  color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: .9rem;
+  border-radius: 6px;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  -webkit-appearance: none;
+}
+.field-input:focus {
+  outline: none;
+  border-color: var(--green);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(26,74,46,.09);
+}
+.field-input::placeholder { color: var(--faint); }
+
+/* ── PASSWORD STRENGTH ── */
+.strength-track {
+  height: 3px;
+  background: var(--ivory-3);
+  border-radius: 99px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.strength-fill {
+  height: 100%; width: 0;
+  border-radius: 99px;
+  transition: width .3s, background .3s;
+}
+.strength-label {
+  font-size: .68rem; font-weight: 600;
+  color: var(--faint); margin-top: 4px;
+}
+
+/* ── FIELD HINT ── */
+.field-hint {
+  font-size: .74rem; color: var(--muted);
+  margin-top: 6px; line-height: 1.5;
+}
+.field-hint-note {
+  font-size: .74rem; margin-top: 5px; line-height: 1.5;
+  color: var(--green);
+  background: var(--green-mist);
+  border: 1px solid var(--green-border);
+  border-radius: 5px;
+  padding: 7px 11px;
+  display: flex; align-items: flex-start; gap: 7px;
+}
+.field-hint-note svg { flex-shrink: 0; margin-top: 1px; }
+.field-hint-note strong { font-weight: 700; }
+
+/* ── ROW LAYOUT (two fields side by side) ── */
+.field-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+@media(max-width: 420px) { .field-row { grid-template-columns: 1fr; } }
+
+/* ── SECTION LABEL ── */
+.form-section-label {
+  font-size: .6rem; font-weight: 700; color: var(--faint);
+  letter-spacing: .16em; text-transform: uppercase;
+  margin: 22px 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.form-section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--ivory-3);
+}
+
+/* ── SUBMIT BUTTON ── */
+.auth-submit {
+  width: 100%; padding: 13px 20px;
+  margin-top: 8px;
+  background: var(--green); color: #fff;
+  border: none; border-radius: 7px;
+  font-family: 'Inter', sans-serif;
+  font-size: .92rem; font-weight: 700; letter-spacing: .02em;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .2s, transform .18s, box-shadow .2s;
+  box-shadow: 0 2px 8px rgba(26,74,46,.18);
+}
+.auth-submit:hover {
+  background: var(--green-lt);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(26,74,46,.24);
+}
+.auth-submit:active { transform: scale(.98); box-shadow: none; }
+.auth-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── CARD FOOTER ── */
+.auth-card-footer {
+  text-align: center;
+  padding: 18px 40px 20px;
+  border-top: 1px solid var(--ivory-2);
+  background: var(--ivory);
+}
+@media(max-width: 480px) { .auth-card-footer { padding: 16px 22px 18px; } }
+.auth-footer-text { font-size: .83rem; color: var(--muted); margin-bottom: 8px; }
+.auth-footer-text a { color: var(--green); font-weight: 700; text-decoration: none; }
+.auth-footer-text a:hover { text-decoration: underline; }
+.auth-back-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .72rem; color: var(--faint); text-decoration: none;
+  transition: color .18s;
+}
+.auth-back-link:hover { color: var(--green); }
+
+/* ── PAGE FOOTER ── */
+.auth-page-footer {
+  text-align: center; padding: 20px;
+  font-size: .68rem; color: var(--faint); flex-shrink: 0;
+}
+
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Top nav -->
+<nav class="auth-navbar">
+  <a href="index.html" class="auth-navbar-brand">
+    <div class="auth-navbar-icon">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#D4AF50" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    </div>
+    <span class="auth-navbar-name">Good <em>for You</em></span>
+  </a>
+  <div class="auth-navbar-sep"></div>
+  <a href="index.html" class="auth-navbar-link">Home</a>
+  <a href="login.html" class="auth-navbar-cta">Sign In</a>
+</nav>
+
+<!-- Page content -->
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-card-accent"></div>
+
+    <div class="auth-card-body">
+
+      <!-- Header -->
+      <div class="auth-card-header">
+        <div class="auth-logo-circle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <h1 class="auth-card-title">Create your account</h1>
+        <p class="auth-card-sub">Join the platform — it's free for students</p>
+      </div>
+
+      <!-- Error alert -->
+      <div class="auth-alert error" id="authError">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="authErrorText"></span>
+      </div>
+
+      <!-- Personal info -->
+      <div class="form-section-label">Personal details</div>
+
+      <div class="field">
+        <label class="field-label" for="signupName">Full Name</label>
+        <input type="text" class="field-input" id="signupName" placeholder="e.g. Rahul Sharma" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="signupEmail">Email Address</label>
+        <input type="email" class="field-input" id="signupEmail" placeholder="you@example.com" autocomplete="email">
+      </div>
+
+      <!-- Password section -->
+      <div class="form-section-label">Set a password</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="signupPassword">Password</label>
+          <input type="password" class="field-input" id="signupPassword" placeholder="Min 8 chars" autocomplete="new-password" oninput="checkStrength(this.value)">
+          <div class="strength-track"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="strength-label" id="strengthLabel"></div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="signupConfirm">Confirm</label>
+          <input type="password" class="field-input" id="signupConfirm" placeholder="Repeat password" autocomplete="new-password">
+        </div>
+      </div>
+
+      <!-- Organisation section -->
+      <div class="form-section-label">Organisation</div>
+
+      <div class="field">
+        <label class="field-label" for="signupOrgCode">Organisation Code</label>
+        <input type="text" class="field-input" id="signupOrgCode"
+          placeholder="e.g. SDHKK"
+          autocomplete="off"
+          style="text-transform:uppercase;letter-spacing:.1em;font-weight:600;"
+          oninput="this.value=this.value.toUpperCase()">
+        <div class="field-hint">Ask your institute for this code to link your account to your organisation.</div>
+        <div class="field-hint-note">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span>No organisation? Use code <strong>FORME</strong> to join as an independent student.</span>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button class="auth-submit" id="signupBtn" onclick="doSignup()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+        Create Account
+      </button>
+
+    </div>
+
+    <!-- Card footer -->
+    <div class="auth-card-footer">
+      <p class="auth-footer-text">Already have an account? <a href="login.html">Sign in here</a></p>
+      <a href="index.html" class="auth-back-link">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back to Home
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<footer class="auth-page-footer">
+  &copy; 2026 Good for You Test Engine &middot; All rights reserved
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script>
+initFirebase();
+
+let signupInProgress = false;
+
+firebase.auth().onAuthStateChanged(async u => {
+  if (u && !signupInProgress) {
+    try {
+      const snap = await window.db.collection('users').doc(u.uid).get();
+      if (snap.exists) window.location.href = 'dashboard.html';
+    } catch(e) {}
+  }
+});
+
+function showError(msg) {
+  const el = document.getElementById('authError');
+  document.getElementById('authErrorText').textContent = msg;
+  el.style.display = 'flex';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function checkStrength(val) {
+  const fill  = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  let s = 0;
+  if (val.length >= 8)           s++;
+  if (/[A-Z]/.test(val))         s++;
+  if (/[0-9]/.test(val))         s++;
+  if (/[^A-Za-z0-9]/.test(val)) s++;
+  const colors = ['', '#E57373', '#F4A460', '#C9A84C', '#27AE60'];
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  fill.style.width      = (s * 25) + '%';
+  fill.style.background = colors[s] || '';
+  label.textContent     = val.length ? labels[s] : '';
+  label.style.color     = colors[s];
+}
+
+async function doSignup() {
+  document.getElementById('authError').style.display = 'none';
+  signupInProgress = true;
+
+  const name    = document.getElementById('signupName').value.trim();
+  const email   = document.getElementById('signupEmail').value.trim();
+  const pass    = document.getElementById('signupPassword').value;
+  const confirm = document.getElementById('signupConfirm').value;
+  const orgCode = document.getElementById('signupOrgCode').value.trim().toUpperCase();
+
+  if (!name)            { showError('Please enter your name.'); return; }
+  if (!email)           { showError('Please enter your email.'); return; }
+  if (pass.length < 8)  { showError('Password must be at least 8 characters.'); return; }
+  if (pass !== confirm) { showError('Passwords do not match.'); return; }
+  if (!orgCode)         { showError('Please enter your Organisation Code.'); return; }
+
+  const btn = document.getElementById('signupBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Verifying code…`;
+
+  try {
+    const orgSnap = await window.db.collection('organisations').doc(orgCode).get();
+    if (!orgSnap.exists) {
+      showError('Organisation not found. Please check your code or contact your institute.');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Create Account`;
+      return;
+    }
+    if (orgSnap.data().active === false) {
+      showError('This organisation is currently inactive. Please contact your institute.');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Create Account`;
+      return;
+    }
+
+    const orgName   = orgSnap.data().name   || orgCode;
+    const orgCourse = orgSnap.data().course || '';
+
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Creating account…`;
+
+    const cred = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: name });
+
+    const userDoc = {
+      uid:       cred.user.uid,
+      username:  name,
+      email:     email,
+      role:      'student',
+      orgCode:   orgCode,
+      orgName:   orgName,
+      orgCourse: orgCourse,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      photoURL:  ''
+    };
+    await window.db.collection('users').doc(cred.user.uid).set(userDoc);
+
+    const verify = await window.db.collection('users').doc(cred.user.uid).get();
+    if (!verify.exists) throw new Error('Profile save failed. Please try again.');
+
+    window.location.href = 'dashboard.html';
+
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': 'This email is already registered. Try signing in instead.',
+      'auth/invalid-email':        'Invalid email format.',
+      'auth/weak-password':        'Password is too weak.',
+    };
+    showError(msgs[e.code] || e.message);
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Create Account`;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /index.html
+Allow: /login.html
+Allow: /signup.html
+Allow: /dashboard.html
+Allow: /test.html
+Allow: /test-own.html
+Allow: /result.html
+Allow: /leaderboard.html
+Allow: /analytics.html
+Allow: /profile.html
+Allow: /shared.css
+
+# Admin & restricted pages — block crawlers
+Disallow: /admin.html
+Disallow: /super-admin.html
+Disallow: /setup-admin.html
+Disallow: /set-teacher.html
+Disallow: /create-org.html
+
+# Block config & rule files
+Disallow: /firebase.json
+Disallow: /firestore.rules
+Disallow: /site.webmanifest
+
+Sitemap: https://goodforyoutest.netlify.app/sitemap.xml
