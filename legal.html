@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Terms & Privacy — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }
+
+body { background: var(--ivory); color: var(--text); font-family: 'Inter', sans-serif; }
+
+/* ── PAGE LAYOUT ── */
+.legal-wrap {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 36px 24px 100px;
+  animation: fadeUp .5s ease both;
+}
+
+/* ── TAB BAR ── */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border: 1.5px solid var(--green-border);
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+.tab-btn {
+  flex: 1;
+  padding: 13px 10px;
+  background: transparent;
+  border: none;
+  border-right: 1.5px solid var(--green-border);
+  font-family: 'Inter', sans-serif;
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.tab-btn:last-child { border-right: none; }
+.tab-btn.active {
+  background: var(--green);
+  color: #fff;
+}
+.tab-btn:hover:not(.active) {
+  background: var(--green-mist);
+  color: var(--green);
+}
+
+/* ── SECTION HEADER ── */
+.legal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 28px 28px 24px;
+  background: var(--ivory-2);
+  border: 1px solid var(--ivory-3);
+  border-left: 4px solid var(--green);
+  margin-bottom: 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.legal-header-icon {
+  width: 44px; height: 44px;
+  background: var(--green-mist);
+  border: 1px solid var(--green-border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--green); flex-shrink: 0;
+}
+.legal-eyebrow {
+  font-size: .58rem; color: var(--green);
+  letter-spacing: .2em; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.legal-eyebrow-line { width: 18px; height: 1.5px; background: #B8962E; flex-shrink: 0; }
+.legal-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.4rem; font-weight: 700;
+  color: var(--green-dim); line-height: 1.2;
+  margin-bottom: 6px;
+}
+.legal-meta { font-size: .76rem; color: var(--muted); line-height: 1.6; }
+
+/* ── SECTION BLOCKS ── */
+.legal-section {
+  background: #fff;
+  border: 1px solid var(--ivory-3);
+  margin-bottom: 14px;
+  box-shadow: 0 1px 5px rgba(0,0,0,.05);
+  overflow: hidden;
+}
+.legal-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: background .18s;
+  user-select: none;
+}
+.legal-section-head:hover { background: var(--green-mist); }
+.legal-section-head.open { border-bottom-color: var(--ivory-3); }
+.section-num {
+  width: 28px; height: 28px;
+  background: var(--green-mist);
+  border: 1px solid var(--green-border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Libre Baskerville', serif;
+  font-size: .75rem; font-weight: 700;
+  color: var(--green); flex-shrink: 0;
+}
+.section-title-text {
+  flex: 1;
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--green-dim);
+}
+.section-chevron {
+  color: var(--muted);
+  transition: transform .25s;
+  flex-shrink: 0;
+}
+.section-chevron.open { transform: rotate(180deg); }
+.legal-section-body {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease, padding .35s ease;
+}
+.legal-section-body.open {
+  padding: 18px 20px 20px;
+  max-height: 1200px;
+}
+.legal-section-body p {
+  font-size: .86rem;
+  color: var(--text);
+  line-height: 1.75;
+  margin-bottom: 12px;
+}
+.legal-section-body p:last-child { margin-bottom: 0; }
+.legal-section-body ul {
+  list-style: none;
+  padding: 0; margin: 0 0 12px 0;
+}
+.legal-section-body ul li {
+  font-size: .86rem;
+  color: var(--text);
+  line-height: 1.7;
+  padding: 5px 0 5px 20px;
+  position: relative;
+  border-bottom: 1px solid var(--ivory-3);
+}
+.legal-section-body ul li:last-child { border-bottom: none; }
+.legal-section-body ul li::before {
+  content: '';
+  position: absolute; left: 0; top: 14px;
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+}
+.legal-section-body strong { color: var(--green-dim); font-weight: 700; }
+.legal-section-body .highlight-box {
+  background: var(--green-mist);
+  border: 1px solid var(--green-border);
+  border-left: 3px solid var(--green);
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: .84rem;
+  color: var(--green-dim);
+  line-height: 1.65;
+}
+.legal-section-body .warn-box {
+  background: rgba(184,150,46,.07);
+  border: 1px solid rgba(184,150,46,.3);
+  border-left: 3px solid #B8962E;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: .84rem;
+  color: var(--text);
+  line-height: 1.65;
+}
+
+/* ── CONTACT CARD ── */
+.contact-card {
+  background: var(--green);
+  padding: 24px 28px;
+  margin-top: 28px;
+  color: #fff;
+}
+.contact-card-eyebrow {
+  font-size: .58rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(255,255,255,.65);
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.contact-card-eyebrow::before {
+  content: ''; width: 14px; height: 1.5px; background: #B8962E;
+}
+.contact-card-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.1rem; font-weight: 700;
+  margin-bottom: 16px; color: #fff;
+}
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.contact-item {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.18);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.contact-item-icon {
+  width: 30px; height: 30px;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff;
+}
+.contact-item-label {
+  font-size: .62rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(255,255,255,.6);
+  margin-bottom: 2px;
+}
+.contact-item-value {
+  font-size: .82rem;
+  font-weight: 600;
+  color: #fff;
+  word-break: break-all;
+}
+.contact-item-value a {
+  color: #fff; text-decoration: none;
+}
+
+/* ── LAST UPDATED ── */
+.last-updated {
+  text-align: center;
+  font-size: .72rem;
+  color: var(--faint);
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ivory-3);
+}
+
+/* ── PANEL VISIBILITY ── */
+.legal-panel { display: none; }
+.legal-panel.active { display: block; }
+
+@media(max-width:600px){
+  .legal-wrap { padding: 20px 14px 80px; }
+  .contact-grid { grid-template-columns: 1fr; }
+  .legal-header { flex-direction: column; gap: 12px; padding: 20px; }
+  .legal-title { font-size: 1.15rem; }
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="header-ca-label">Good for You</span>
+  <span class="header-pill">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Legal
+  </span>
+</header>
+
+<div class="page-wrap">
+<div class="legal-wrap">
+
+  <!-- TAB BAR -->
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" id="tabTerms" onclick="switchTab('terms')" role="tab">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Terms &amp; Conditions
+    </button>
+    <button class="tab-btn" id="tabPrivacy" onclick="switchTab('privacy')" role="tab">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Privacy Policy
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════
+       TERMS & CONDITIONS PANEL
+  ═══════════════════════════════ -->
+  <div class="legal-panel active" id="panelTerms">
+
+    <div class="legal-header">
+      <div class="legal-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div>
+        <div class="legal-eyebrow"><span class="legal-eyebrow-line"></span>Good for You Test Engine</div>
+        <div class="legal-title">Terms &amp; Conditions</div>
+        <div class="legal-meta">Please read these terms carefully before registering your organisation or using the platform. By creating an account or using any part of GFYTE, you agree to be bound by these terms.</div>
+      </div>
+    </div>
+
+    <!-- 1. About the Platform -->
+    <div class="legal-section">
+      <div class="legal-section-head open" onclick="toggleSection(this)">
+        <div class="section-num">1</div>
+        <div class="section-title-text">About the Platform</div>
+        <svg class="section-chevron open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body open">
+        <p><strong>Good for You Test Engine (GFYTE)</strong> is an online examination and assessment platform operated by <strong>Good for You</strong>, managed by <strong>Gajanan Dhobale</strong>. The platform enables coaching institutes and educational organisations to create, manage, and conduct MCQ-based tests for their students.</p>
+        <p>GFYTE is made available as a software-as-a-service (SaaS) product. Access is granted on a subscription basis to registered organisations through a unique organisation code. All use of the platform is subject to these Terms &amp; Conditions.</p>
+      </div>
+    </div>
+
+    <!-- 2. Eligibility & Registration -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">2</div>
+        <div class="section-title-text">Eligibility &amp; Registration</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>The platform is intended for use by educational organisations, coaching institutes, and their affiliated students and teachers. By registering, you confirm that:</p>
+        <ul>
+          <li>You are authorised to register and act on behalf of your organisation.</li>
+          <li>All information provided during registration is accurate and up to date.</li>
+          <li>You will not share your organisation code or admin credentials with unauthorised parties.</li>
+          <li>You accept responsibility for all activity that occurs under your organisation's account.</li>
+        </ul>
+        <p>We reserve the right to reject or suspend registrations at our discretion if misuse or fraudulent activity is suspected.</p>
+      </div>
+    </div>
+
+    <!-- 3. Free Plan & Student Limit -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">3</div>
+        <div class="section-title-text">Free Plan &amp; Student Limit</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <div class="highlight-box">
+          <strong>Up to 50 members per organisation are free forever</strong> — no subscription, no trial, no expiry. This is a permanent offer with no hidden conditions.
+        </div>
+        <p>The 50-member limit includes <strong>all account types</strong> within your organisation — students, teachers, and administrators combined. It is not 50 students separately; it is 50 total accounts across all roles.</p>
+        <p>If your organisation grows beyond 50 members, a paid subscription will be required to continue adding new members and conducting tests. Existing data and accounts remain accessible when you upgrade.</p>
+        <p>We do not reduce or revoke the free tier for organisations that remain within the 50-member limit, regardless of how long they have been using the platform.</p>
+      </div>
+    </div>
+
+    <!-- 4. Subscription & Billing -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">4</div>
+        <div class="section-title-text">Subscription &amp; Billing</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>Organisations that exceed the 50-member limit are eligible for a <strong>first month free</strong>, subject to the following condition:</p>
+        <div class="warn-box">
+          The free first month is only granted to organisations that commit to at least one paid month immediately after the trial period ends. If your organisation does not proceed to a paid subscription after the free month, access to features beyond the free tier will be suspended.
+        </div>
+        <p>Subscriptions are billed on a monthly cycle. Pricing details are displayed at the time of subscription and are subject to change with prior notice to the organisation's admin.</p>
+        <ul>
+          <li>Subscriptions auto-renew at the end of each billing period.</li>
+          <li>You may cancel your subscription at any time before the next renewal date.</li>
+          <li>Cancellation takes effect at the end of the current paid period — access continues until then.</li>
+          <li>Once a billing period begins, the subscription cannot be paused or transferred to another organisation.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5. Refund Policy -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">5</div>
+        <div class="section-title-text">Refund Policy</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <div class="warn-box">
+          <strong>Subscription fees are non-refundable.</strong> No refund will be issued if you cancel mid-way through a billing period, choose to stop using the platform, or decide to downgrade your plan for any personal or organisational reason.
+        </div>
+        <p>A refund will only be considered in the following circumstance:</p>
+        <ul>
+          <li><strong>Platform failure:</strong> If a critical failure on our end — meaning a fault in GFYTE's own systems — results in the platform being completely inaccessible or non-functional for a substantial portion of your paid billing period, and we are unable to restore access within a reasonable time, you may be eligible for a partial or full refund at our discretion.</li>
+        </ul>
+        <p>To request a refund under the above condition, you must contact us with details of the issue within 7 days of the incident using the contact information provided in these terms. Refund requests are reviewed case by case and are not guaranteed.</p>
+        <p>Payment processing fees charged by third-party gateways are not refundable under any circumstances.</p>
+      </div>
+    </div>
+
+    <!-- 6. Account Suspension -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">6</div>
+        <div class="section-title-text">Account Suspension for Non-Payment</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>If a paid subscription is not renewed before or within <strong>7 days after the end of the current billing period</strong>, the organisation's account will be suspended.</p>
+        <p>During suspension:</p>
+        <ul>
+          <li>No new tests can be created or conducted.</li>
+          <li>No new member accounts can be added.</li>
+          <li>Admin and teacher operations will be restricted.</li>
+          <li>Existing data (tests, results, member records) remains stored and is not deleted during suspension.</li>
+        </ul>
+        <p>Access is restored automatically and immediately upon successful payment renewal. We encourage organisations to renew before the deadline to avoid any disruption to ongoing academic activities.</p>
+      </div>
+    </div>
+
+    <!-- 7. Acceptable Use -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">7</div>
+        <div class="section-title-text">Acceptable Use</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>You agree not to use GFYTE in any way that:</p>
+        <ul>
+          <li>Violates any applicable law or regulation.</li>
+          <li>Attempts to gain unauthorised access to another organisation's data or accounts.</li>
+          <li>Reverse-engineers, copies, or reproduces any part of the platform's source code or design.</li>
+          <li>Introduces malware, scripts, or any code intended to disrupt platform functionality.</li>
+          <li>Misrepresents your organisation's identity or affiliation during onboarding.</li>
+          <li>Uses the platform to conduct assessments for which you do not hold necessary rights to the question content.</li>
+        </ul>
+        <p>Violation of these rules may result in immediate suspension or permanent termination of your organisation's access without prior notice and without eligibility for a refund.</p>
+      </div>
+    </div>
+
+    <!-- 8. Anti-Cheat & Exam Integrity -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">8</div>
+        <div class="section-title-text">Anti-Cheat &amp; Exam Integrity</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>GFYTE includes built-in anti-cheat mechanisms to protect the integrity of assessments. During a live test, the platform monitors and logs:</p>
+        <ul>
+          <li>Tab switches, window minimisation, and attempts to leave the test window.</li>
+          <li>Page reloads during an active test session.</li>
+          <li>Device and session information at the time of the attempt.</li>
+        </ul>
+        <p>Repeated violations (currently set to 4 incidents) will trigger automatic submission of the test. All violation logs are made available to the assigned teacher and organisation admin.</p>
+        <p>Students acknowledge that these measures are in place when they begin any live test. Teachers and admins are responsible for communicating this to students under their organisation.</p>
+      </div>
+    </div>
+
+    <!-- 9. Intellectual Property -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">9</div>
+        <div class="section-title-text">Intellectual Property</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>The GFYTE platform — including its design, code, branding, and interface — is the intellectual property of Good for You and its manager. All rights are reserved.</p>
+        <p>Content uploaded by your organisation (test questions, result data, member information) remains the property of your organisation. By uploading content, you grant GFYTE a limited licence to store and process that content solely for the purpose of operating the platform on your behalf.</p>
+        <p>You may not use the GFYTE name, logo, or branding in any promotional material without prior written consent.</p>
+      </div>
+    </div>
+
+    <!-- 10. Limitation of Liability -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">10</div>
+        <div class="section-title-text">Limitation of Liability</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>GFYTE is provided on an "as is" basis. While we make every effort to maintain uptime and reliability, we do not guarantee uninterrupted access to the platform.</p>
+        <p>To the maximum extent permitted by applicable law, Good for You and its manager shall not be liable for:</p>
+        <ul>
+          <li>Loss of data resulting from circumstances outside our control (e.g. third-party service outages, force majeure events).</li>
+          <li>Indirect, incidental, or consequential damages arising from use or inability to use the platform.</li>
+          <li>Outcomes of assessments or academic decisions made based on GFYTE results.</li>
+        </ul>
+        <p>Our total liability, if any, shall not exceed the amount paid by your organisation for the current billing period.</p>
+      </div>
+    </div>
+
+    <!-- 11. Contact & Disputes -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">11</div>
+        <div class="section-title-text">Contact &amp; Dispute Resolution</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>If you have any concern, dispute, or issue related to these terms, your subscription, or any platform behaviour, we ask that you contact us first before pursuing any other resolution. We are committed to resolving issues fairly and promptly.</p>
+        <p>You can reach us using the contact details provided at the bottom of this page, or directly through the <strong>Profile section</strong> of your GFYTE account.</p>
+        <p>These terms are governed by and construed in accordance with the laws of India. Any disputes that cannot be resolved amicably shall be subject to the jurisdiction of the courts in the relevant district.</p>
+      </div>
+    </div>
+
+    <!-- 12. Changes to Terms -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">12</div>
+        <div class="section-title-text">Changes to These Terms</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>We may update these Terms &amp; Conditions from time to time. When we do, we will update the "Last Updated" date below. For significant changes, we will notify organisation admins via the platform or by email where available.</p>
+        <p>Continued use of the platform after changes are posted constitutes acceptance of the updated terms. We encourage you to review this page periodically.</p>
+      </div>
+    </div>
+
+  </div><!-- /panelTerms -->
+
+
+  <!-- ═══════════════════════════════
+       PRIVACY POLICY PANEL
+  ═══════════════════════════════ -->
+  <div class="legal-panel" id="panelPrivacy">
+
+    <div class="legal-header">
+      <div class="legal-header-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <div class="legal-eyebrow"><span class="legal-eyebrow-line"></span>Good for You Test Engine</div>
+        <div class="legal-title">Privacy Policy</div>
+        <div class="legal-meta">This policy explains what data we collect, how it is used, who it belongs to, and what your rights are. We are committed to maintaining strict confidentiality for all organisations on the platform.</div>
+      </div>
+    </div>
+
+    <!-- 1. Data Ownership & Organisation Isolation -->
+    <div class="legal-section">
+      <div class="legal-section-head open" onclick="toggleSection(this)">
+        <div class="section-num">1</div>
+        <div class="section-title-text">Data Ownership &amp; Organisation Isolation</div>
+        <svg class="section-chevron open" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body open">
+        <div class="highlight-box">
+          All your data — tests, results, and member information — belongs exclusively to your organisation. It is isolated and accessible only within the boundary of your unique organisation code. No person from another organisation can access, view, or retrieve your data in any form.
+        </div>
+        <p>This isolation is enforced at the database level. Every record stored on the platform — test papers, student answers, results, member accounts — is tagged to your organisation code. Queries from one organisation's account cannot return data belonging to another.</p>
+        <p>Teachers can only access data within their own organisation. Students can only access tests and results tied to their own account within their organisation. Admins have full access within their organisation only.</p>
+      </div>
+    </div>
+
+    <!-- 2. What Data We Collect -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">2</div>
+        <div class="section-title-text">What Data We Collect</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>We collect only the information necessary to operate the platform. This includes:</p>
+        <ul>
+          <li><strong>Account information:</strong> Name, email address, role (student/teacher/admin), and organisation code — provided during account creation.</li>
+          <li><strong>Test content:</strong> Questions, options, and correct answers uploaded by teachers or admins.</li>
+          <li><strong>Test responses:</strong> Answers submitted by students, timestamps, time taken, and attempt metadata.</li>
+          <li><strong>Result data:</strong> Scores, rankings, section-wise performance, and violation logs (tab switches, reloads).</li>
+          <li><strong>Device information:</strong> Basic device/browser details logged at the time of a test attempt, used for integrity monitoring only.</li>
+          <li><strong>Authentication tokens:</strong> Managed securely by Firebase Authentication; we do not store raw passwords.</li>
+        </ul>
+        <p>We do not collect payment card details directly — these are handled entirely by our third-party payment processor (Razorpay), which maintains its own security and compliance standards.</p>
+      </div>
+    </div>
+
+    <!-- 3. No Selling or Sharing of Data -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">3</div>
+        <div class="section-title-text">No Selling or Sharing of Data</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <div class="highlight-box">
+          We do not sell, rent, or trade your data or your organisation's data to any third party. We do not use your data for advertising purposes. We maintain strict confidentiality between all client organisations on the platform.
+        </div>
+        <p>Your data is never shared with other organisations using GFYTE. What happens inside your institute stays inside your institute.</p>
+        <p>The only limited circumstances under which data may be accessed beyond your organisation are:</p>
+        <ul>
+          <li><strong>Platform maintenance:</strong> The platform manager (Gajanan Dhobale) may access data in aggregate or specific form solely for the purpose of debugging, fixing issues, or maintaining the platform on your behalf.</li>
+          <li><strong>Legal requirement:</strong> If we are required by law or court order to disclose certain information, we will comply but will notify you to the extent permitted by law.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4. How We Use Your Data -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">4</div>
+        <div class="section-title-text">How We Use Your Data</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>Data collected on the platform is used exclusively for the following purposes:</p>
+        <ul>
+          <li>Authenticating and managing user accounts within your organisation.</li>
+          <li>Storing and displaying test content, student responses, and results.</li>
+          <li>Generating performance statistics, rankings, and reports within your organisation.</li>
+          <li>Detecting and logging exam integrity violations for review by teachers and admins.</li>
+          <li>Managing subscription and billing status for your organisation.</li>
+          <li>Improving platform stability, performance, and reliability.</li>
+        </ul>
+        <p>We do not run analytics that profile individual students for any purpose outside your organisation's own reporting.</p>
+      </div>
+    </div>
+
+    <!-- 5. Data Deletion on Leaving -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">5</div>
+        <div class="section-title-text">Data Deletion When Leaving the Platform</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <div class="warn-box">
+          <strong>Important:</strong> If your organisation decides to leave the platform, we strongly advise you to notify us during your current active billing period — not after it ends — so that we can initiate the deletion of all member authentication data and account records we hold for your organisation.
+        </div>
+        <p>We store member account information (names, emails, login credentials) to allow your members to sign in. If your organisation does not inform us before leaving, this data may remain stored on our systems.</p>
+        <p>Upon receiving a formal deletion request from your organisation's admin:</p>
+        <ul>
+          <li>All member authentication records tied to your organisation will be permanently deleted.</li>
+          <li>Login access for all members under your organisation code will be revoked.</li>
+          <li>Test content and result data will be deleted as per your request (full deletion or partial retention for your own records — your choice).</li>
+        </ul>
+        <p>After deletion is complete, nothing from your organisation will remain on the platform. To submit a deletion request, contact us using the details at the bottom of this page or through the Profile section in your account.</p>
+      </div>
+    </div>
+
+    <!-- 6. Data Security -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">6</div>
+        <div class="section-title-text">Data Security</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>We take reasonable steps to protect your data from unauthorised access, loss, or misuse. These include:</p>
+        <ul>
+          <li>Database-level security rules that enforce per-organisation data isolation.</li>
+          <li>Firebase Authentication for all login flows — passwords are never stored in plain text.</li>
+          <li>HTTPS-only access to all platform pages and API endpoints.</li>
+          <li>Restricted access to production systems — only the platform manager has administrative access.</li>
+        </ul>
+        <p>No system is perfectly secure. While we do our best, we cannot guarantee absolute security against all possible threats. In the event of a breach affecting your data, we will notify you promptly and take corrective action.</p>
+      </div>
+    </div>
+
+    <!-- 7. Cookies & Local Storage -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">7</div>
+        <div class="section-title-text">Cookies &amp; Session Storage</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>GFYTE uses browser session storage and authentication tokens to keep you signed in and to pass information between pages (for example, which test you are about to take). This is purely functional — we do not use cookies for advertising or cross-site tracking.</p>
+        <p>Firebase Authentication may set its own authentication cookies as part of its standard login mechanism. These are necessary for the platform to function and cannot be disabled while using the service.</p>
+        <p>We do not use any third-party advertising or analytics cookies (e.g. Google Analytics, Meta Pixel).</p>
+      </div>
+    </div>
+
+    <!-- 8. Children's Privacy -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">8</div>
+        <div class="section-title-text">Students &amp; Minors</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>GFYTE may be used by students who are minors, given its focus on educational assessments. In such cases, student accounts are created and managed by the registered organisation (teacher or admin) — not by the students themselves.</p>
+        <p>Organisations are responsible for ensuring they have appropriate consent from students or their guardians before enrolling them on the platform, in accordance with applicable laws and their own institutional policies.</p>
+        <p>We collect only the minimum data needed to operate a student's account (name, email, results) and we do not use student data for any purpose outside of operating the assessment platform.</p>
+      </div>
+    </div>
+
+    <!-- 9. Changes to Privacy Policy -->
+    <div class="legal-section">
+      <div class="legal-section-head" onclick="toggleSection(this)">
+        <div class="section-num">9</div>
+        <div class="section-title-text">Changes to This Policy</div>
+        <svg class="section-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
+      <div class="legal-section-body">
+        <p>We may update this Privacy Policy as the platform evolves or as legal requirements change. When we do, the "Last Updated" date at the bottom of this page will be revised.</p>
+        <p>We encourage organisation admins to review this page periodically. Significant changes will be communicated through the platform or by direct contact.</p>
+      </div>
+    </div>
+
+  </div><!-- /panelPrivacy -->
+
+
+  <!-- ── CONTACT CARD (shared across both panels) ── -->
+  <div class="contact-card">
+    <div class="contact-card-eyebrow">Get in Touch</div>
+    <div class="contact-card-title">Contact &amp; Support</div>
+    <div class="contact-grid">
+      <div class="contact-item">
+        <div class="contact-item-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <div class="contact-item-label">Manager</div>
+          <div class="contact-item-value">Gajanan Dhobale</div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div>
+          <div class="contact-item-label">Email</div>
+          <div class="contact-item-value"><a href="mailto:support@growforyou.in">support@growforyou.in</a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.69A16 16 0 0 0 12 15.91l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 20 16.92z"/></svg>
+        </div>
+        <div>
+          <div class="contact-item-label">Phone / WhatsApp</div>
+          <div class="contact-item-value"><a href="tel:+919834000000">+91 98340 00000</a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-item-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <div>
+          <div class="contact-item-label">Response Time</div>
+          <div class="contact-item-value">Within 24–48 hours</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="last-updated">Last updated: June 2025 &nbsp;·&nbsp; Good for You Test Engine &nbsp;·&nbsp; All rights reserved.</div>
+
+</div>
+</div><!-- /page-wrap -->
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script>
+initFirebase();
+initBgCanvas();
+injectDrawer('');
+
+// Optional: inject header user if logged in
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    try { injectHeaderUser?.(); populateDrawerUser?.(); } catch(e){}
+  }
+});
+
+/* ── Tab switching ── */
+function switchTab(tab) {
+  document.getElementById('panelTerms').classList.toggle('active', tab === 'terms');
+  document.getElementById('panelPrivacy').classList.toggle('active', tab === 'privacy');
+  document.getElementById('tabTerms').classList.toggle('active', tab === 'terms');
+  document.getElementById('tabPrivacy').classList.toggle('active', tab === 'privacy');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Accordion sections ── */
+function toggleSection(head) {
+  const body    = head.nextElementSibling;
+  const chevron = head.querySelector('.section-chevron');
+  const isOpen  = body.classList.contains('open');
+
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+  head.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
