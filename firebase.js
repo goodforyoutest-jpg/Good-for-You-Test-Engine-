@@ -225,13 +225,19 @@ function formatDate(ts) {
 
 /* ── ELASTIC JSON NORMALISER (preserved from original) ── */
 function normaliseQuestion(raw) {
-  const q    = raw.q    ||raw.question ||raw.text  ||raw.stem ||'';
-  const opts = raw.opts ||raw.options  ||raw.choices||raw.answers||[];
-  const ans  = raw.ans!==undefined?raw.ans:raw.answer!==undefined?raw.answer:raw.correct!==undefined?raw.correct:raw.correctIndex!==undefined?raw.correctIndex:raw.key!==undefined?raw.key:0;
-  const exp  = raw.exp  ||raw.explanation||raw.explain||raw.note||'';
-  const sec  = raw.section||raw.topic||raw.chapter||raw.category||'';
-  return { q, opts, ans:typeof ans==='number'?ans:parseInt(ans)||0, exp, section:sec };
+  const q       = raw.q    ||raw.question ||raw.text  ||raw.stem ||'';
+  const opts    = raw.opts ||raw.options  ||raw.choices||raw.answers||[];
+  const ans     = raw.ans!==undefined?raw.ans:raw.answer!==undefined?raw.answer:raw.correct!==undefined?raw.correct:raw.correctIndex!==undefined?raw.correctIndex:raw.key!==undefined?raw.key:0;
+  const exp     = raw.exp     ||raw.explanation||raw.explain||raw.note||'';
+  const sec     = raw.section ||raw.topic      ||raw.chapter||raw.category||'';
+  const passage = raw.passage ||raw.caseStudy  ||raw.passageText||'';
+  const image        = raw.image        || null;
+  const imageCaption = raw.imageCaption || raw.caption || '';
+  return {
+    q, opts, ans:typeof ans==='number'?ans:parseInt(ans)||0, exp, section:sec,
+    passage, image, imageCaption,
+  };
 }
 function normaliseQuestions(arr) {
-  return arr.map(normaliseQuestion).filter(q=>q.q&&Array.isArray(q.opts)&&q.opts.length>=2);
+  return arr.map(normaliseQuestion).filter(q=>q.q&&Array.isArray(q.opts)&&q.opts.length>=2); 
 }
