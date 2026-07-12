@@ -1,0 +1,8 @@
+{
+  "name": "gfyte-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for GFYTE",
+  "dependencies": {
+    "pdf-parse": "^1.1.1"
+  }
+}
