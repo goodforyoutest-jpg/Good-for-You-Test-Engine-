@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Read a PDF — Good for You Test Engine</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ═══════════════════════════════════════════════════
+   PDF → TEST — Emerald / Ivory palette, matches test.html
+═══════════════════════════════════════════════════ */
+body { background: var(--ivory); color: var(--text); font-family: 'Inter', sans-serif; }
+
+.pdf-wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 100px; }
+
+/* ── STEPPER ── */
+.stepper {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin-bottom: 30px; flex-wrap: wrap;
+}
+.step-item { display: flex; align-items: center; gap: 6px; }
+.step-dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .68rem; font-weight: 700; font-family: 'Libre Baskerville', serif;
+  background: var(--ivory-2); border: 1px solid var(--ivory-3); color: var(--muted);
+  transition: all .25s;
+}
+.step-item.active .step-dot { background: var(--green); border-color: var(--green); color: #fff; }
+.step-item.done   .step-dot { background: var(--gold); border-color: var(--gold); color: #fff; }
+.step-label { font-size: .66rem; color: var(--muted); font-weight: 600; display: none; }
+@media (min-width: 560px) { .step-label { display: inline; } }
+.step-item.active .step-label { color: var(--green-dim); }
+.step-line { width: 18px; height: 1px; background: var(--ivory-3); }
+@media (min-width: 560px) { .step-line { width: 28px; } }
+
+/* ── PAGE HEAD ── */
+.pdf-title { font-family: 'Libre Baskerville', serif; font-size: 1.3rem; font-weight: 700; color: var(--green-dim); margin-bottom: 4px; }
+.pdf-sub   { font-size: .84rem; color: var(--text-mid); margin-bottom: 24px; }
+.eyebrow {
+  font-size: .62rem; font-weight: 700; color: var(--gold);
+  letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; display: block;
+}
+
+/* ── PHASE PANELS ── */
+.phase-panel { display: none; }
+.phase-panel.active { display: block; animation: card-in .25s ease both; }
+@keyframes card-in { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+
+/* ── CARD ── */
+.card {
+  background: #fff; border: 1px solid var(--ivory-3); border-radius: 16px;
+  padding: 22px 20px; box-shadow: 0 1px 6px rgba(0,0,0,.05); margin-bottom: 16px;
+}
+
+/* ── DROPZONE ── */
+.dropzone {
+  border: 2px dashed var(--ivory-3); border-radius: 14px;
+  padding: 36px 20px; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--ivory-2);
+}
+.dropzone.drag-over { border-color: var(--green); background: var(--green-mist); }
+.dropzone-icon { margin-bottom: 10px; color: var(--green); }
+.dropzone-text { font-size: .9rem; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+.dropzone-sub  { font-size: .74rem; color: var(--muted); }
+.file-chosen {
+  display: none; align-items: center; gap: 10px; margin-top: 14px;
+  background: var(--green-mist); border: 1px solid var(--green-border);
+  border-radius: 12px; padding: 10px 14px;
+}
+.file-chosen.show { display: flex; }
+.file-chosen-name { font-size: .82rem; font-weight: 600; color: var(--green-dim); flex: 1; word-break: break-word; }
+.file-chosen-size { font-size: .7rem; color: var(--muted); }
+.file-remove { background: none; border: none; color: var(--wrong); cursor: pointer; font-size: .75rem; font-weight: 700; }
+
+/* ── FORM ── */
+.form-row { margin-bottom: 16px; }
+.form-row label {
+  display: block; font-size: .72rem; font-weight: 700; color: var(--text-mid);
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px;
+}
+.form-row input[type="text"], .form-row input[type="number"] {
+  width: 100%; padding: 11px 13px; border: 1px solid var(--ivory-3); border-radius: 10px;
+  font-size: .9rem; font-family: 'Inter', sans-serif; color: var(--text); background: var(--ivory);
+}
+.form-row input:focus { outline: none; border-color: var(--green); }
+.form-row input[readonly] { background: var(--ivory-2); color: var(--text-mid); }
+.form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: var(--ivory-2); border: 1px solid var(--ivory-3);
+  border-radius: 10px; margin-bottom: 14px;
+}
+.toggle-row-label { font-size: .84rem; font-weight: 600; color: var(--text); }
+.switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: var(--ivory-3); border-radius: 99px; cursor: pointer; transition: .2s; }
+.slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+.switch input:checked + .slider { background: var(--green); }
+.switch input:checked + .slider::before { transform: translateX(18px); }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, var(--green), var(--green-lt));
+  color: #fff; font-size: .92rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .15s, opacity .15s; font-family: 'Inter', sans-serif;
+}
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost {
+  width: 100%; padding: 13px; border: 1px solid var(--ivory-3); border-radius: 12px;
+  background: #fff; color: var(--text-mid); font-size: .86rem; font-weight: 600; cursor: pointer;
+  margin-top: 10px;
+}
+
+/* ── PHASE 2: READING ── */
+.reading-wrap { text-align: center; padding: 50px 10px; }
+.reading-spinner {
+  width: 54px; height: 54px; margin: 0 auto 26px;
+  border: 3px solid var(--ivory-3); border-top-color: var(--green);
+  border-radius: 50%; animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.reading-steps { display: inline-flex; flex-direction: column; gap: 10px; text-align: left; }
+.reading-step { display: flex; align-items: center; gap: 10px; font-size: .84rem; color: var(--muted); transition: color .2s; }
+.reading-step.active { color: var(--green-dim); font-weight: 700; }
+.reading-step.complete { color: var(--gold); }
+.reading-step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ivory-3); flex-shrink: 0; }
+.reading-step.active .reading-step-dot { background: var(--green); animation: pulse 1s ease infinite; }
+.reading-step.complete .reading-step-dot { background: var(--gold); }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+/* ── PHASE 3: MARK ANSWERS ── */
+.mark-progress-wrap {
+  position: sticky; top: 0; z-index: 50; background: var(--ivory);
+  padding: 12px 0; margin: -24px -20px 20px; padding-left: 20px; padding-right: 20px;
+  border-bottom: 1px solid var(--ivory-3);
+}
+.mark-progress-label { font-size: .74rem; font-weight: 700; color: var(--green-dim); margin-bottom: 6px; }
+.mark-progress-track { height: 5px; background: var(--ivory-3); border-radius: 99px; overflow: hidden; }
+.mark-progress-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); transition: width .3s; }
+
+.q-card { background: #fff; border: 1px solid var(--ivory-3); border-radius: 16px; padding: 20px 18px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+.q-card.unanswered-flag { border-color: var(--wrong); box-shadow: 0 0 0 2px rgba(192,57,43,.12); }
+.q-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.q-num-badge {
+  min-width: 30px; height: 30px; border-radius: 9px; background: var(--green);
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  font-family: 'Libre Baskerville', serif; font-size: .8rem; font-weight: 700; flex-shrink: 0;
+}
+.section-badge {
+  background: var(--green-mist); border: 1px solid var(--green-border); border-radius: 99px;
+  padding: 3px 10px; font-size: .64rem; color: var(--green); font-weight: 700;
+}
+.ans-found-badge {
+  background: rgba(184,150,46,.12); border: 1px solid rgba(184,150,46,.35); border-radius: 99px;
+  padding: 3px 10px; font-size: .64rem; color: var(--gold); font-weight: 700; margin-left: auto;
+}
+.q-card .q-passage { background: var(--ivory-2); border: 1px solid var(--ivory-3); border-left: 3px solid var(--gold); padding: 12px 14px; margin-bottom: 12px; font-size: .82rem; line-height: 1.7; font-style: italic; }
+.q-card .q-passage-label { font-size: .6rem; font-weight: 700; color: var(--gold); letter-spacing: .12em; text-transform: uppercase; font-style: normal; display: block; margin-bottom: 6px; }
+.q-card .q-image-wrap { margin-bottom: 12px; text-align: center; }
+.q-card .q-image-wrap img { max-width: 100%; max-height: 240px; object-fit: contain; border: 1px solid var(--ivory-3); background: #fff; padding: 6px; }
+.q-image-caption-input {
+  width: 100%; margin-top: 6px; padding: 8px 10px; font-size: .74rem;
+  border: 1px solid var(--ivory-3); border-radius: 8px; color: var(--text-mid); font-family: 'Inter', sans-serif;
+}
+.q-card-text { font-size: .9rem; line-height: 1.65; color: var(--text); font-weight: 500; font-family: 'Libre Baskerville', serif; margin-bottom: 14px; }
+.q-mark-opts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.q-mark-opt {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  border: 1px solid var(--ivory-3); border-radius: 12px; cursor: pointer;
+  background: var(--ivory); transition: all .15s; -webkit-tap-highlight-color: transparent;
+}
+.q-mark-opt:active { transform: scale(.985); }
+.q-mark-opt.is-correct { border-color: var(--correct); background: rgba(39,174,96,.08); }
+.q-mark-opt.was-prefilled { border-color: var(--gold); background: rgba(184,150,46,.08); }
+.opt-letter-badge {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--ivory-3);
+  display: flex; align-items: center; justify-content: center; font-size: .68rem; font-weight: 700;
+  color: var(--text-mid); flex-shrink: 0;
+}
+.q-mark-opt.is-correct .opt-letter-badge { border-color: var(--correct); background: var(--correct); color: #fff; }
+.q-mark-opt-text { font-size: .84rem; color: var(--text-mid); flex: 1; line-height: 1.5; }
+.q-mark-opt.is-correct .q-mark-opt-text { color: var(--text); font-weight: 600; }
+.q-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.exp-toggle-link { font-size: .74rem; color: var(--green); font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; }
+.remove-q-btn { font-size: .74rem; color: var(--wrong); font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; }
+.exp-textarea {
+  display: none; width: 100%; margin-top: 10px; padding: 10px 12px;
+  border: 1px solid var(--ivory-3); border-radius: 10px; font-size: .82rem;
+  font-family: 'Inter', sans-serif; color: var(--text); min-height: 64px; resize: vertical;
+}
+.exp-textarea.show { display: block; }
+
+/* ── PHASE 4: PUBLISH ── */
+.summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ivory-3); font-size: .86rem; }
+.summary-row:last-child { border-bottom: none; }
+.summary-row-label { color: var(--muted); }
+.summary-row-value { color: var(--text); font-weight: 700; }
+.confirm-hint { font-size: .74rem; color: var(--muted); margin-top: 6px; }
+.confirm-hint.warn { color: var(--wrong); }
+
+/* ── PHASE 5: SUCCESS ── */
+.success-wrap { text-align: center; padding: 50px 10px; }
+.success-icon {
+  width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), var(--green-lt));
+  display: flex; align-items: center; justify-content: center;
+}
+.success-title { font-family: 'Libre Baskerville', serif; font-size: 1.2rem; font-weight: 700; color: var(--green-dim); margin-bottom: 8px; }
+.success-sub { font-size: .86rem; color: var(--text-mid); margin-bottom: 26px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<header class="site-header">
+  <button id="hamburgerBtn" class="hamburger-btn" aria-label="Menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <a href="admin.html" class="site-logo">Good for You <span id="headerCaLabel"></span></a>
+</header>
+
+<div id="menuOverlay" class="menu-overlay"></div>
+<nav id="sideDrawer" class="side-drawer">
+  <div class="drawer-top">
+    <button id="drawerClose" class="drawer-close" aria-label="Close menu">&times;</button>
+  </div>
+  <div class="drawer-user-card">
+    <div id="drawerAvatar" class="drawer-avatar">?</div>
+    <div>
+      <div id="drawerUserName" class="drawer-user-name">Guest</div>
+      <div id="drawerUserRole" class="drawer-user-role">Not logged in</div>
+    </div>
+  </div>
+  <ul class="drawer-nav">
+    <li><a href="dashboard.html">Dashboard</a></li>
+    <li id="drawerAdminItem" style="display:none"><a href="admin.html">Admin Panel</a></li>
+    <li id="drawerSuperAdminItem" style="display:none"><a href="super-admin.html">Super Admin</a></li>
+    <li id="drawerLoginItem" style="display:none"><a href="login.html">Log in</a></li>
+    <li id="drawerLogoutItem" style="display:none"><a href="#" onclick="logoutUser();return false;">Log out</a></li>
+  </ul>
+</nav>
+
+<div class="pdf-wrap">
+
+  <div class="stepper" id="stepper">
+    <div class="step-item" data-step="1"><div class="step-dot">1</div><span class="step-label">Upload</span></div>
+    <div class="step-line"></div>
+    <div class="step-item" data-step="2"><div class="step-dot">2</div><span class="step-label">Reading</span></div>
+    <div class="step-line"></div>
+    <div class="step-item" data-step="3"><div class="step-dot">3</div><span class="step-label">Mark Answers</span></div>
+    <div class="step-line"></div>
+    <div class="step-item" data-step="4"><div class="step-dot">4</div><span class="step-label">Publish</span></div>
+    <div class="step-line"></div>
+    <div class="step-item" data-step="5"><div class="step-dot">5</div><span class="step-label">Done</span></div>
+  </div>
+
+  <!-- ═══ PHASE 1 — UPLOAD ═══ -->
+  <section class="phase-panel" id="phase-1">
+    <span class="eyebrow">Upload PDF ✦</span>
+    <div class="pdf-title">Read a question paper</div>
+    <div class="pdf-sub">Upload a PDF and the AI will pull out every question, ready for you to check.</div>
+
+    <div class="card">
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+        </div>
+        <div class="dropzone-text">Tap to choose a PDF, or drag it here</div>
+        <div class="dropzone-sub">Text-based question papers, up to 10MB</div>
+        <input type="file" id="fileInput" accept="application/pdf" class="hidden">
+      </div>
+      <div class="file-chosen" id="fileChosen">
+        <span class="file-chosen-name" id="fileChosenName"></span>
+        <span class="file-chosen-size" id="fileChosenSize"></span>
+        <button class="file-remove" id="fileRemoveBtn" type="button">Remove</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="form-row">
+        <label for="testNameInput">Test name</label>
+        <input type="text" id="testNameInput" placeholder="e.g. CA Foundation — Accounts Mock 3">
+      </div>
+      <div class="form-grid2">
+        <div class="form-row">
+          <label for="durationInput">Duration (minutes)</label>
+          <input type="number" id="durationInput" min="0" placeholder="0 = no limit" value="0">
+        </div>
+        <div class="form-row">
+          <label for="marksCorrectInput">Marks per correct</label>
+          <input type="number" id="marksCorrectInput" min="0" step="0.25" value="1">
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-row-label">Negative marking</span>
+        <label class="switch"><input type="checkbox" id="negMarkingToggle"><span class="slider"></span></label>
+      </div>
+      <div class="form-row hidden" id="marksWrongRow">
+        <label for="marksWrongInput">Marks deducted per wrong</label>
+        <input type="number" id="marksWrongInput" min="0" step="0.25" value="0.25">
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-row-label">Randomise question order</span>
+        <label class="switch"><input type="checkbox" id="randomizeToggle"><span class="slider"></span></label>
+      </div>
+      <div class="form-row">
+        <label for="orgCodeInput">Organisation code</label>
+        <input type="text" id="orgCodeInput" readonly>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="startReadBtn" disabled>
+      Read My Paper with AI
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </section>
+
+  <!-- ═══ PHASE 2 — READING ═══ -->
+  <section class="phase-panel" id="phase-2">
+    <div class="reading-wrap">
+      <div class="reading-spinner"></div>
+      <div class="reading-steps" id="readingSteps">
+        <div class="reading-step" data-rstep="0"><span class="reading-step-dot"></span>Loading PDF viewer…</div>
+        <div class="reading-step" data-rstep="1"><span class="reading-step-dot"></span>Extracting text from your paper…</div>
+        <div class="reading-step" data-rstep="2"><span class="reading-step-dot"></span>Sending to AI…</div>
+        <div class="reading-step" data-rstep="3"><span class="reading-step-dot"></span>Identifying questions…</div>
+        <div class="reading-step" data-rstep="4"><span class="reading-step-dot"></span>Structuring your test…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PHASE 3 — MARK ANSWERS ═══ -->
+  <section class="phase-panel" id="phase-3">
+    <div class="mark-progress-wrap">
+      <div class="mark-progress-label" id="markProgressLabel">0 / 0 answers marked</div>
+      <div class="mark-progress-track"><div class="mark-progress-fill" id="markProgressFill" style="width:0%"></div></div>
+    </div>
+    <div class="pdf-sub">Check each question. Tap the correct option to mark it.</div>
+    <div id="qCardsWrap"></div>
+    <button class="btn-primary" id="continueToPublishBtn">
+      Continue to Publish
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </section>
+
+  <!-- ═══ PHASE 4 — PUBLISH ═══ -->
+  <section class="phase-panel" id="phase-4">
+    <span class="eyebrow">Almost there</span>
+    <div class="pdf-title">Review &amp; publish</div>
+    <div class="card">
+      <div class="summary-row"><span class="summary-row-label">Test name</span><span class="summary-row-value" id="sumTitle"></span></div>
+      <div class="summary-row"><span class="summary-row-label">Questions</span><span class="summary-row-value" id="sumCount"></span></div>
+      <div class="summary-row"><span class="summary-row-label">Duration</span><span class="summary-row-value" id="sumDuration"></span></div>
+      <div class="summary-row"><span class="summary-row-label">Marking scheme</span><span class="summary-row-value" id="sumMarking"></span></div>
+      <div class="summary-row"><span class="summary-row-label">Organisation</span><span class="summary-row-value" id="sumOrg"></span></div>
+    </div>
+    <div class="card">
+      <div class="form-row">
+        <label for="confirmOrgInput">Confirm organisation code to publish</label>
+        <input type="text" id="confirmOrgInput" placeholder="Type the organisation code exactly">
+        <div class="confirm-hint" id="confirmHint">This matches the test to your organisation.</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="publishBtn" disabled>Publish Test</button>
+    <button class="btn-ghost" id="backToMarkBtn" type="button">Back to Mark Answers</button>
+  </section>
+
+  <!-- ═══ PHASE 5 — SUCCESS ═══ -->
+  <section class="phase-panel" id="phase-5">
+    <div class="success-wrap">
+      <div class="success-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-title" id="successTitle">Test published</div>
+      <div class="success-sub" id="successSub"></div>
+      <a href="admin.html" class="btn-ghost" style="display:block;text-decoration:none;box-sizing:border-box;">Back to Admin</a>
+      <button class="btn-primary" id="uploadAnotherBtn" style="margin-top:10px;">Upload Another PDF</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let currentPhase   = 1;
+let selectedFile   = null;
+let orgCode        = null;
+let questions      = [];   // working array, editable in Phase 3
+let imageMap       = {};   // token ("IMG_1") -> data URI, built during extraction
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ═══════════════════════════════════════════════════
+   INIT / AUTH GATE
+═══════════════════════════════════════════════════ */
+(async function init() {
+  initFirebase();
+  const auth = await requireAdmin();
+  if (!auth) return; // requireAdmin already redirects on failure
+  orgCode = auth.orgCode || '';
+  document.getElementById('orgCodeInput').value = orgCode;
+
+  initDrawer();
+  initBgCanvas();
+  populateDrawerUser();
+  injectHeaderUser();
+  goToPhase(1);
+  wireUpEvents();
+})();
+
+/* ═══════════════════════════════════════════════════
+   PHASE / STEPPER NAVIGATION
+═══════════════════════════════════════════════════ */
+function goToPhase(n) {
+  currentPhase = n;
+  document.querySelectorAll('.phase-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('phase-' + n).classList.add('active');
+  document.querySelectorAll('.step-item').forEach(item => {
+    const step = parseInt(item.dataset.step, 10);
+    item.classList.toggle('active', step === n);
+    item.classList.toggle('done', step < n);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ═══════════════════════════════════════════════════
+   EVENT WIRING
+═══════════════════════════════════════════════════ */
+function wireUpEvents() {
+  const dropzone   = document.getElementById('dropzone');
+  const fileInput  = document.getElementById('fileInput');
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    if (e.dataTransfer.files?.[0]) handleFileChosen(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files?.[0]) handleFileChosen(fileInput.files[0]);
+  });
+  document.getElementById('fileRemoveBtn').addEventListener('click', e => {
+    e.stopPropagation();
+    selectedFile = null;
+    fileInput.value = '';
+    document.getElementById('fileChosen').classList.remove('show');
+    updateStartButtonState();
+  });
+
+  document.getElementById('negMarkingToggle').addEventListener('change', e => {
+    document.getElementById('marksWrongRow').classList.toggle('hidden', !e.target.checked);
+  });
+
+  document.getElementById('testNameInput').addEventListener('input', updateStartButtonState);
+
+  document.getElementById('startReadBtn').addEventListener('click', startReading);
+  document.getElementById('continueToPublishBtn').addEventListener('click', goToPublishPhase);
+  document.getElementById('backToMarkBtn').addEventListener('click', () => goToPhase(3));
+  document.getElementById('confirmOrgInput').addEventListener('input', validateConfirmOrg);
+  document.getElementById('publishBtn').addEventListener('click', publishTest);
+  document.getElementById('uploadAnotherBtn').addEventListener('click', resetAll);
+}
+
+function handleFileChosen(file) {
+  if (file.type !== 'application/pdf') {
+    showToast('Please choose a PDF file.', 'error');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('That file is over 10MB. Please upload a smaller PDF.', 'error');
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('fileChosenName').textContent = file.name;
+  document.getElementById('fileChosenSize').textContent = formatFileSize(file.size);
+  document.getElementById('fileChosen').classList.add('show');
+  updateStartButtonState();
+}
+
+function updateStartButtonState() {
+  const nameOk = document.getElementById('testNameInput').value.trim().length > 0;
+  document.getElementById('startReadBtn').disabled = !(selectedFile && nameOk);
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 2 — READING (PDF.js extraction + AI structuring)
+═══════════════════════════════════════════════════ */
+function setReadingStep(index) {
+  document.querySelectorAll('.reading-step').forEach(el => {
+    const i = parseInt(el.dataset.rstep, 10);
+    el.classList.toggle('active', i === index);
+    el.classList.toggle('complete', i < index);
+  });
+}
+
+async function startReading() {
+  goToPhase(2);
+  setReadingStep(0);
+
+  try {
+    // Step 0 — load PDF viewer
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    // Step 1 — extract text (+ images) from every page
+    setReadingStep(1);
+    imageMap = {};
+    let imgCounter = 0;
+    const pageTextBlocks = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const scale = 2; // render scale — good balance of crop quality vs memory on mobile
+      const viewport = page.getViewport({ scale });
+
+      const [textContent, imageBoxes] = await Promise.all([
+        page.getTextContent(),
+        extractPageImageBoxes(page, viewport),
+      ]);
+
+      // Render the page once so we can crop each image box out of it.
+      let pageCanvas = null;
+      if (imageBoxes.length) {
+        pageCanvas = document.createElement('canvas');
+        pageCanvas.width = viewport.width;
+        pageCanvas.height = viewport.height;
+        const ctx = pageCanvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      }
+
+      // Build a single reading-order token stream mixing text items and
+      // image placeholders, ordered by vertical position on the page.
+      const tokens = textContent.items
+        .filter(item => item.str && item.str.trim())
+        .map(item => ({ type: 'text', str: item.str, y: item.transform[5] }));
+
+      imageBoxes.forEach(box => {
+        // Skip tiny images — usually logos/icons, not real diagrams.
+        if (box.canvasW < 40 || box.canvasH < 40) return;
+        imgCounter++;
+        const token = 'IMG_' + imgCounter;
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = box.canvasW;
+        cropCanvas.height = box.canvasH;
+        cropCanvas.getContext('2d').drawImage(
+          pageCanvas,
+          box.canvasX, box.canvasY, box.canvasW, box.canvasH,
+          0, 0, box.canvasW, box.canvasH
+        );
+        imageMap[token] = cropCanvas.toDataURL('image/png');
+        tokens.push({ type: 'image', token, y: box.pdfTopY });
+      });
+
+      // Sort top-to-bottom (PDF y-axis increases upward, so descending y = reading order).
+      tokens.sort((a, b) => b.y - a.y);
+
+      const pageText = tokens.map(t => (t.type === 'text' ? t.str : `[[${t.token}]]`)).join(' ');
+      pageTextBlocks.push(pageText);
+    }
+
+    const fullText = pageTextBlocks.join('\n\n');
+    if (!fullText.trim()) {
+      throw new Error('EMPTY_TEXT');
+    }
+
+    // Step 2 — send to AI
+    setReadingStep(2);
+    const res = await fetch('/.netlify/functions/extract-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: fullText, filename: selectedFile.name }),
+    });
+
+    setReadingStep(3);
+    await sleep(500); // brief pacing so the step is readable, not just a flash
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error || 'READ_FAILED');
+    }
+
+    // Step 3 — structure into the working question set
+    setReadingStep(4);
+    questions = (data.questions || []).map(q => {
+      const image = q.imageRef && imageMap[q.imageRef] ? imageMap[q.imageRef] : null;
+      return {
+        q: q.q,
+        opts: q.opts,
+        ans: (typeof q.ans === 'number') ? q.ans : null,
+        prefilledAns: (typeof q.ans === 'number'), // was this pulled from the PDF's answer key?
+        section: q.section || '',
+        passage: q.passage || '',
+        exp: '',
+        image,
+        imageCaption: '',
+      };
+    });
+
+    await sleep(400);
+    renderQuestionCards();
+    goToPhase(3);
+
+  } catch (err) {
+    console.error('PDF read error:', err);
+    goToPhase(1);
+    if (err.message === 'EMPTY_TEXT') {
+      showToast('No readable text was found. Make sure the PDF isn\u2019t a scanned image.', 'error');
+    } else if (typeof err.message === 'string' && err.message !== 'READ_FAILED') {
+      showToast(err.message, 'error');
+    } else {
+      showToast('Couldn\u2019t read this paper. Please try again.', 'error');
+    }
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* Walk a page's low-level drawing operators to find where images are
+   placed, in both PDF page space (for ordering against text) and canvas
+   pixel space (for cropping the rendered page). Best-effort: if this
+   finds nothing, the question simply has no image — never falls back
+   to attaching the whole page. */
+async function extractPageImageBoxes(page, viewport) {
+  const opList = await page.getOperatorList();
+  const OPS = pdfjsLib.OPS;
+  const { fnArray, argsArray } = opList;
+
+  let ctm = [1, 0, 0, 1, 0, 0];
+  const stack = [];
+  const boxes = [];
+
+  for (let i = 0; i < fnArray.length; i++) {
+    const fn = fnArray[i];
+    if (fn === OPS.save) {
+      stack.push(ctm.slice());
+    } else if (fn === OPS.restore) {
+      ctm = stack.pop() || ctm;
+    } else if (fn === OPS.transform) {
+      ctm = matMul(ctm, argsArray[i]);
+    } else if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject || fn === OPS.paintInlineImageXObject) {
+      const canvasM = matMul(viewport.transform, ctm);
+      const corners = [[0, 0], [1, 0], [0, 1], [1, 1]].map(p => applyMat(canvasM, p));
+      const xs = corners.map(c => c[0]);
+      const ys = corners.map(c => c[1]);
+      const canvasX = Math.max(0, Math.min(...xs));
+      const canvasY = Math.max(0, Math.min(...ys));
+      const canvasW = Math.min(viewport.width, Math.max(...xs)) - canvasX;
+      const canvasH = Math.min(viewport.height, Math.max(...ys)) - canvasY;
+
+      // Top edge in raw PDF space, used only for ordering against text tokens.
+      const pdfCorners = [[0, 0], [1, 0], [0, 1], [1, 1]].map(p => applyMat(ctm, p));
+      const pdfTopY = Math.max(...pdfCorners.map(c => c[1]));
+
+      if (canvasW > 0 && canvasH > 0) {
+        boxes.push({ canvasX, canvasY, canvasW, canvasH, pdfTopY });
+      }
+    }
+  }
+  return boxes;
+}
+
+function matMul(a, b) {
+  return [
+    a[0] * b[0] + a[2] * b[1],
+    a[1] * b[0] + a[3] * b[1],
+    a[0] * b[2] + a[2] * b[3],
+    a[1] * b[2] + a[3] * b[3],
+    a[0] * b[4] + a[2] * b[5] + a[4],
+    a[1] * b[4] + a[3] * b[5] + a[5],
+  ];
+}
+function applyMat(m, p) {
+  return [m[0] * p[0] + m[2] * p[1] + m[4], m[1] * p[0] + m[3] * p[1] + m[5]];
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 3 — MARK ANSWERS
+═══════════════════════════════════════════════════ */
+function renderQuestionCards() {
+  const wrap = document.getElementById('qCardsWrap');
+  wrap.innerHTML = '';
+
+  questions.forEach((q, i) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = 'qcard-' + i;
+
+    let prefixHtml = '';
+    if (q.passage && q.passage.trim()) {
+      prefixHtml += `<div class="q-passage"><span class="q-passage-label">\u{1F4D6} Passage / Case Study</span>${escHtml(q.passage)}</div>`;
+    }
+    if (q.image) {
+      prefixHtml += `<div class="q-image-wrap">
+        <img src="${q.image}" alt="Question diagram">
+        <input type="text" class="q-image-caption-input" placeholder="Add a caption (optional)" value="${escHtml(q.imageCaption || '')}" oninput="updateCaption(${i}, this.value)">
+      </div>`;
+    }
+
+    const optsHtml = q.opts.map((o, j) => {
+      const isCorrect = q.ans === j;
+      const prefilled = isCorrect && q.prefilledAns;
+      return `<div class="q-mark-opt ${isCorrect ? 'is-correct' : ''} ${prefilled ? 'was-prefilled' : ''}" onclick="markAnswer(${i}, ${j})">
+        <span class="opt-letter-badge">${String.fromCharCode(65 + j)}</span>
+        <span class="q-mark-opt-text">${escHtml(o)}</span>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="q-card-top">
+        <div class="q-num-badge">${i + 1}</div>
+        ${q.section ? `<span class="section-badge">${escHtml(q.section)}</span>` : ''}
+        ${q.prefilledAns ? `<span class="ans-found-badge">\u2726 Answer found in PDF</span>` : ''}
+      </div>
+      ${prefixHtml}
+      <div class="q-card-text">${escHtml(q.q)}</div>
+      <div class="q-mark-opts">${optsHtml}</div>
+      <div class="q-card-bottom">
+        <button type="button" class="exp-toggle-link" onclick="toggleExp(${i})">+ Add explanation</button>
+        <button type="button" class="remove-q-btn" onclick="removeQuestion(${i})">Remove question</button>
+      </div>
+      <textarea class="exp-textarea" id="exp-input-${i}" placeholder="Explain why this is the correct answer…" oninput="updateExp(${i}, this.value)">${escHtml(q.exp || '')}</textarea>
+    `;
+    wrap.appendChild(card);
+  });
+
+  updateMarkProgress();
+}
+
+function markAnswer(qIdx, optIdx) {
+  questions[qIdx].ans = optIdx;
+  questions[qIdx].prefilledAns = false; // once a teacher taps, it's a manual confirmation, not a PDF-detected badge
+  renderQuestionCards();
+}
+
+function updateCaption(qIdx, value) { questions[qIdx].imageCaption = value; }
+function updateExp(qIdx, value) { questions[qIdx].exp = value; }
+
+function toggleExp(qIdx) {
+  const ta = document.getElementById('exp-input-' + qIdx);
+  ta.classList.toggle('show');
+}
+
+function removeQuestion(qIdx) {
+  questions.splice(qIdx, 1);
+  renderQuestionCards();
+}
+
+function updateMarkProgress() {
+  const total = questions.length;
+  const marked = questions.filter(q => q.ans !== null && q.ans !== undefined).length;
+  document.getElementById('markProgressLabel').textContent = `${marked} / ${total} answers marked`;
+  document.getElementById('markProgressFill').style.width = total ? `${(marked / total) * 100}%` : '0%';
+}
+
+function goToPublishPhase() {
+  updateMarkProgress();
+  const unanswered = [];
+  questions.forEach((q, i) => {
+    const card = document.getElementById('qcard-' + i);
+    const isUnanswered = q.ans === null || q.ans === undefined;
+    card.classList.toggle('unanswered-flag', isUnanswered);
+    if (isUnanswered) unanswered.push(i);
+  });
+
+  if (unanswered.length) {
+    showToast(`${unanswered.length} question${unanswered.length > 1 ? 's' : ''} still need an answer marked.`, 'error');
+    document.getElementById('qcard-' + unanswered[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (!questions.length) {
+    showToast('No questions left to publish.', 'error');
+    return;
+  }
+
+  buildPublishSummary();
+  goToPhase(4);
+}
+
+/* ═══════════════════════════════════════════════════
+   PHASE 4 — PUBLISH
+═══════════════════════════════════════════════════ */
+function buildPublishSummary() {
+  const title      = document.getElementById('testNameInput').value.trim();
+  const duration   = parseInt(document.getElementById('durationInput').value, 10) || 0;
+  const marksC     = parseFloat(document.getElementById('marksCorrectInput').value) || 1;
+  const negMarking = document.getElementById('negMarkingToggle').checked;
+  const marksW     = negMarking ? (parseFloat(document.getElementById('marksWrongInput').value) || 0) : 0;
+
+  document.getElementById('sumTitle').textContent    = title;
+  document.getElementById('sumCount').textContent    = questions.length + (questions.length === 1 ? ' question' : ' questions');
+  document.getElementById('sumDuration').textContent = duration === 0 ? 'No limit' : duration + ' minutes';
+  document.getElementById('sumMarking').textContent  = negMarking
+    ? `+${marksC} correct \u00B7 \u2212${marksW} wrong`
+    : `+${marksC} per correct, no negative marking`;
+  document.getElementById('sumOrg').textContent      = orgCode || '\u2014';
+
+  document.getElementById('confirmOrgInput').value = '';
+  document.getElementById('publishBtn').disabled = true;
+  document.getElementById('confirmHint').textContent = 'This matches the test to your organisation.';
+  document.getElementById('confirmHint').classList.remove('warn');
+}
+
+function validateConfirmOrg() {
+  const val = document.getElementById('confirmOrgInput').value.trim();
+  const ok = val === orgCode && val.length > 0;
+  document.getElementById('publishBtn').disabled = !ok;
+  const hint = document.getElementById('confirmHint');
+  if (val.length === 0) {
+    hint.textContent = 'This matches the test to your organisation.';
+    hint.classList.remove('warn');
+  } else if (!ok) {
+    hint.textContent = 'Doesn\u2019t match yet — check for typos.';
+    hint.classList.add('warn');
+  } else {
+    hint.textContent = 'Looks good.';
+    hint.classList.remove('warn');
+  }
+}
+
+async function publishTest() {
+  const btn = document.getElementById('publishBtn');
+  btn.disabled = true;
+  btn.textContent = 'Publishing…';
+
+  try {
+    const title      = document.getElementById('testNameInput').value.trim();
+    const duration   = parseInt(document.getElementById('durationInput').value, 10) || 0;
+    const marksC     = parseFloat(document.getElementById('marksCorrectInput').value) || 1;
+    const negMarking = document.getElementById('negMarkingToggle').checked;
+    const marksW     = negMarking ? (parseFloat(document.getElementById('marksWrongInput').value) || 0) : 0;
+    const randomize  = document.getElementById('randomizeToggle').checked;
+
+    const testDoc = {
+      title,
+      orgCode: (orgCode || '').toUpperCase(),
+      durationMinutes: duration,
+      marksCorrect: marksC,
+      negativeMarking: negMarking,
+      marksWrong: marksW,
+      randomizeQuestions: randomize,
+      active: true,
+      source: 'pdf',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      questions: questions.map(q => ({
+        q: q.q,
+        opts: q.opts,
+        ans: q.ans,
+        exp: q.exp || '',
+        section: q.section || '',
+        passage: q.passage || '',
+        image: q.image || null,
+        imageCaption: q.imageCaption || '',
+      })),
+    };
+
+    await window.db.collection('tests').add(testDoc);
+
+    document.getElementById('successTitle').textContent = 'Test published';
+    document.getElementById('successSub').textContent = `"${title}" is live with ${questions.length} question${questions.length === 1 ? '' : 's'}.`;
+    goToPhase(5);
+  } catch (err) {
+    console.error('Publish error:', err);
+    showToast('Couldn\u2019t publish the test. Please try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Publish Test';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════ */
+function resetAll() {
+  selectedFile = null;
+  questions = [];
+  imageMap = {};
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileChosen').classList.remove('show');
+  document.getElementById('testNameInput').value = '';
+  document.getElementById('durationInput').value = '0';
+  document.getElementById('marksCorrectInput').value = '1';
+  document.getElementById('negMarkingToggle').checked = false;
+  document.getElementById('marksWrongRow').classList.add('hidden');
+  document.getElementById('marksWrongInput').value = '0.25';
+  document.getElementById('randomizeToggle').checked = false;
+  document.getElementById('publishBtn').textContent = 'Publish Test';
+  updateStartButtonState();
+  goToPhase(1);
+}
+</script>
+</body>
+</html>
