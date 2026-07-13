@@ -7,7 +7,15 @@
    available on Netlify's Node 18+ runtime).
 
    Request  (POST, application/json):
-     { text: string, filename: string }
+     { text: string, filename: string, instructions?: string }
+
+   The client may split one PDF into several batches of ~50 questions
+   each (see pdf-to-test.html) and call this function once per batch —
+   this function itself has no knowledge of batching; it just structures
+   whatever text it's given. `instructions` (optional, teacher-provided
+   free text such as "only extract the first 50 questions" or "ignore
+   the Roman Numerals chapter") is sent along with every batch so it's
+   honored consistently no matter which part of the paper a batch covers.
 
    Response (200):
      { questions: QuestionObject[], total: number }
@@ -70,7 +78,14 @@ What to ignore completely (do not turn these into questions or include them anyw
 
 If the text contains no identifiable MCQ questions, return {"questions":[]}.
 
+Note: you may be receiving only part of a larger paper (the rest was sent in separate calls). Extract everything in the text you were given — do not skip questions assuming they'll appear elsewhere, and do not repeat questions from outside the text you were given.
+
 Return ONLY the JSON object. Nothing else.`;
+
+function buildSystemPrompt(instructions) {
+  if (!instructions) return SYSTEM_PROMPT;
+  return SYSTEM_PROMPT + `\n\nTEACHER'S INSTRUCTIONS — follow these strictly, they override the default extraction behavior above where they conflict:\n"""${instructions}"""\nIf these instructions say to skip, ignore, or exclude something, do not include it in "questions" at all. If they impose a limit (e.g. "only the first N questions"), respect that limit even if more questions are present in the text.`;
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -100,6 +115,8 @@ exports.handler = async (event) => {
     return respond(400, { error: 'No readable text was found in this PDF. Make sure it\u2019s a text-based paper, not a scanned image.' }, headers);
   }
 
+  const instructions = typeof body.instructions === 'string' ? body.instructions.trim().slice(0, 600) : '';
+
   if (text.length > MAX_TEXT_CHARS) {
     return respond(400, { error: 'This paper is too long to read in one go. Try splitting it into smaller sections and uploading each part separately.' }, headers);
   }
@@ -122,7 +139,7 @@ exports.handler = async (event) => {
         temperature: 0.1,
         max_tokens: 8000,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: buildSystemPrompt(instructions) },
           { role: 'user', content: `Filename: ${String(body.filename || 'paper.pdf')}\n\nExtracted text:\n\n${text}` },
         ],
       }),
@@ -193,4 +210,4 @@ function sanitiseQuestion(raw) {
 
   return { q, opts, ans, section, passage, exp: '', imageRef };
 }
-
+   
