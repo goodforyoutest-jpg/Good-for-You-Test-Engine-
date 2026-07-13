@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Upload PDF Test — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+
+@keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin     { to{transform:rotate(360deg)} }
+@keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.45} }
+@keyframes card-in  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+.page-wrap { max-width: 780px; margin: 0 auto; padding: 28px 16px 100px; }
+
+/* ── PHASE STEPPER ── */
+.stepper {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 32px; background: #fff;
+  border: 1px solid var(--ivory-3);
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+  overflow: hidden;
+}
+.step {
+  flex: 1; padding: 13px 10px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border-right: 1px solid var(--ivory-3);
+  transition: background .2s;
+}
+.step:last-child { border-right: none; }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--ivory-3); color: var(--muted);
+  font-size: .72rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .3s;
+}
+.step-label { font-size: .62rem; color: var(--muted); font-weight: 600; letter-spacing: .04em; }
+.step.active .step-num { background: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(26,58,42,.3); }
+.step.active .step-label { color: var(--green); }
+.step.done .step-num { background: var(--gold); color: #fff; }
+.step.done .step-label { color: #B8962E; }
+
+/* ── PHASE PANELS ── */
+.phase { display: none; animation: fadeUp .35s ease both; }
+.phase.active { display: block; }
+
+/* ── UPLOAD PHASE ── */
+.drop-zone {
+  border: 2px dashed var(--green-border);
+  background: var(--green-mist);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--green);
+  background: rgba(26,58,42,.1);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon { color: var(--green); opacity: .6; margin-bottom: 14px; display: flex; justify-content: center; }
+.drop-title { font-family: 'Libre Baskerville', serif; font-size: 1.1rem; color: var(--green-dim); font-weight: 700; margin-bottom: 6px; }
+.drop-sub   { font-size: .8rem; color: var(--muted); line-height: 1.6; }
+.drop-note  { font-size: .72rem; color: var(--muted); margin-top: 12px; padding: 8px 14px; background: rgba(255,255,255,.7); display: inline-block; }
+
+.file-chosen {
+  display: none; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: #fff; border: 1px solid var(--green-border);
+  margin-top: 12px;
+}
+.file-chosen.show { display: flex; }
+.file-icon { color: var(--green); flex-shrink: 0; }
+.file-name { font-weight: 700; font-size: .88rem; color: var(--green-dim); }
+.file-size { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+.file-remove {
+  margin-left: auto; background: none; border: none;
+  color: var(--muted); cursor: pointer; padding: 4px; flex-shrink: 0;
+  font-size: .8rem; transition: color .15s;
+}
+.file-remove:hover { color: #DC2626; }
+
+.upload-form-card {
+  background: #fff; border: 1px solid var(--ivory-3);
+  padding: 24px; margin-top: 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+.upload-form-card h3 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: .95rem; color: var(--green-dim); margin-bottom: 16px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--ivory-3);
+  display: flex; align-items: center; gap: 8px;
+}
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grp   { margin-bottom: 14px; }
+.form-grp label {
+  display: block; font-size: .75rem; font-weight: 700;
+  color: var(--green-dim); letter-spacing: .04em;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.form-grp label .opt-tag { font-weight: 400; text-transform: none; color: var(--muted); letter-spacing: 0; }
+.form-grp input, .form-grp select, .form-grp textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid var(--ivory-3); background: var(--ivory);
+  font-family: 'Inter', sans-serif; font-size: .88rem;
+  color: var(--text); outline: none; transition: border-color .2s;
+  -webkit-appearance: none;
+}
+.form-grp textarea { resize: vertical; min-height: 56px; line-height: 1.5; }
+.form-grp input:focus, .form-grp select:focus, .form-grp textarea:focus { border-color: var(--green); background: #fff; }
+.form-grp-hint { font-size: .68rem; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.neg-marks-row { display: none; }
+.neg-marks-row.show { display: block; }
+
+/* ── LOADING PHASE ── */
+.loading-card {
+  background: #fff; border: 1px solid var(--ivory-3);
+  padding: 48px 32px; text-align: center;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07);
+}
+.ai-spinner {
+  width: 56px; height: 56px;
+  border: 3px solid var(--ivory-3);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto 24px;
+}
+.loading-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.15rem; font-weight: 700; color: var(--green-dim); margin-bottom: 8px;
+}
+.loading-sub { font-size: .85rem; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
+.load-steps { display: flex; flex-direction: column; gap: 8px; max-width: 360px; margin: 0 auto; text-align: left; max-height: 340px; overflow-y: auto; }
+.load-step {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .82rem; color: var(--muted); padding: 8px 12px;
+  border: 1px solid var(--ivory-3); background: var(--ivory);
+  transition: all .3s;
+}
+.load-step.active { color: var(--green); background: var(--green-mist); border-color: var(--green-border); }
+.load-step.done   { color: #27AE60; background: rgba(39,174,96,.06); border-color: rgba(39,174,96,.25); }
+.ls-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ivory-3); flex-shrink: 0; transition: all .3s;
+}
+.load-step.active .ls-dot { background: var(--green); animation: pulse 1s ease infinite; }
+.load-step.done   .ls-dot { background: #27AE60; }
+
+/* ── ANSWER PHASE ── */
+.answer-sticky {
+  position: sticky; top: 60px; z-index: 80;
+  background: var(--green);
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  margin: 0 -16px 24px;
+}
+.ans-progress-track { flex: 1; height: 4px; background: rgba(255,255,255,.2); border-radius: 99px; overflow: hidden; }
+.ans-progress-fill  { height: 100%; background: var(--gold); border-radius: 99px; transition: width .4s ease; }
+.ans-count { font-size: .78rem; color: rgba(255,255,255,.85); font-weight: 700; white-space: nowrap; }
+.ans-flag  { font-size: .72rem; color: rgba(255,200,0,.9); display: none; white-space: nowrap; }
+.ans-flag.show { display: block; }
+
+.q-cards-wrap { display: flex; flex-direction: column; gap: 16px; }
+
+/* question card — same DNA as test.html */
+.pq-card {
+  background: #fff;
+  border: 1px solid var(--ivory-3);
+  border-left: 4px solid var(--ivory-3);
+  border-radius: 0;
+  padding: 20px;
+  animation: card-in .25s ease both;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+  transition: border-left-color .2s;
+}
+.pq-card.answered { border-left-color: var(--green); }
+.pq-card.unanswered-err { border-left-color: #DC2626; box-shadow: 0 0 0 2px rgba(220,38,38,.12); }
+
+.pq-header { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+.pq-num {
+  min-width: 32px; height: 32px;
+  background: var(--green); color: #fff;
+  font-family: 'Libre Baskerville', serif; font-size: .82rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.pq-num.answered-num { background: var(--gold); }
+.pq-text {
+  font-family: 'Libre Baskerville', serif;
+  font-size: .93rem; color: var(--text); line-height: 1.7;
+  padding-top: 5px; font-weight: 500;
+}
+.pq-passage {
+  font-size: .82rem; color: var(--text-mid); line-height: 1.75;
+  background: var(--ivory-2); border: 1px solid var(--ivory-3);
+  border-left: 3px solid var(--gold);
+  padding: 12px 14px; margin-bottom: 12px;
+  font-style: italic;
+}
+.pq-passage-label {
+  font-size: .6rem; font-weight: 700; color: #B8962E;
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 6px;
+  font-style: normal;
+}
+.pq-section-badge {
+  display: inline-block;
+  font-size: .6rem; font-weight: 700; color: var(--green);
+  background: var(--green-mist); border: 1px solid var(--green-border);
+  padding: 2px 8px; letter-spacing: .08em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* image block — new */
+.pq-image-wrap { margin-bottom: 12px; text-align: center; }
+.pq-image-wrap img {
+  max-width: 100%; max-height: 260px; object-fit: contain;
+  border: 1px solid var(--ivory-3); background: #fff; padding: 6px;
+}
+.pq-image-caption-input {
+  width: 100%; margin-top: 6px; padding: 7px 10px;
+  border: 1px solid var(--ivory-3); background: var(--ivory);
+  font-size: .74rem; font-family: 'Inter', sans-serif; color: var(--text-mid);
+  text-align: center; outline: none; transition: border-color .2s;
+}
+.pq-image-caption-input:focus { border-color: var(--green); background: #fff; }
+
+.pq-opts { display: flex; flex-direction: column; gap: 7px; }
+.pq-opt {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--ivory-3);
+  background: var(--ivory); cursor: pointer;
+  transition: all .17s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.pq-opt:active { transform: scale(.985); }
+.pq-opt:hover  { border-color: var(--green-border); background: var(--green-mist); }
+.pq-opt.selected {
+  border-color: var(--green); background: var(--green-mist);
+  box-shadow: inset 0 0 0 1px rgba(26,58,42,.12);
+}
+.pq-radio {
+  width: 19px; height: 19px; border-radius: 50%;
+  border: 2px solid var(--ivory-3); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.pq-opt.selected .pq-radio { border-color: var(--green); background: var(--green); }
+.pq-radio-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: transparent; transform: scale(0); transition: all .15s;
+}
+.pq-opt.selected .pq-radio-dot { background: #fff; transform: scale(1); }
+.pq-opt-letter { font-weight: 700; color: var(--green); font-size: .82rem; min-width: 18px; }
+.pq-opt-text   { font-size: .88rem; color: var(--text-mid); flex: 1; line-height: 1.5; }
+
+/* edit controls */
+.pq-edit-row {
+  display: flex; gap: 8px; margin-top: 14px;
+  padding-top: 12px; border-top: 1px solid var(--ivory-3);
+  flex-wrap: wrap; align-items: center;
+}
+.pq-edit-btn {
+  padding: 5px 12px; font-size: .74rem; font-weight: 600;
+  border: 1px solid; cursor: pointer; font-family: 'Inter', sans-serif;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: all .15s; background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+.pq-edit-btn:hover { transform: translateY(-1px); }
+.pq-del-btn  { border-color: rgba(185,28,28,.25); color: #DC2626; }
+.pq-del-btn:hover  { background: rgba(185,28,28,.07); }
+
+.pq-exp-input {
+  width: 100%; margin-top: 10px; padding: 8px 11px;
+  border: 1.5px solid var(--ivory-3); background: var(--ivory);
+  font-family: 'Inter', sans-serif; font-size: .82rem; color: var(--text);
+  outline: none; resize: vertical; min-height: 44px;
+  transition: border-color .2s;
+}
+.pq-exp-input:focus { border-color: var(--green); background: #fff; }
+.pq-exp-label { font-size: .68rem; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-top: 10px; margin-bottom: 4px; }
+
+/* ── PUBLISH PHASE ── */
+.pub-card {
+  background: #fff; border: 1px solid var(--ivory-3);
+  padding: 28px 24px; margin-bottom: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+.pub-card h3 {
+  font-family: 'Libre Baskerville', serif;
+  font-size: .95rem; color: var(--green-dim); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.pub-summary {
+  background: var(--green-mist); border: 1px solid var(--green-border);
+  border-left: 3px solid var(--green); padding: 14px 16px; margin-bottom: 20px;
+  font-size: .83rem; color: var(--green-dim); line-height: 1.7;
+}
+.pub-summary strong { color: var(--green); }
+
+/* ── SUCCESS PHASE ── */
+.success-card {
+  background: #fff; border: 1px solid var(--ivory-3);
+  padding: 48px 32px; text-align: center;
+  box-shadow: 0 2px 16px rgba(0,0,0,.07);
+}
+.success-icon {
+  width: 64px; height: 64px; background: rgba(39,174,96,.1);
+  border: 2px solid rgba(39,174,96,.3);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px; color: #27AE60;
+}
+.success-title {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.3rem; font-weight: 700; color: var(--green-dim); margin-bottom: 8px;
+}
+.success-sub { font-size: .85rem; color: var(--muted); margin-bottom: 28px; }
+
+/* ── SHARED BITS ── */
+.section-eyebrow {
+  font-size: .6rem; color: var(--green); letter-spacing: .18em;
+  text-transform: uppercase; font-weight: 700;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+}
+.section-eyebrow::before { content:''; width:14px; height:1.5px; background:var(--gold); }
+
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 24px; background: linear-gradient(135deg, var(--green), var(--green-lt));
+  color: #fff; border: none; font-family: 'Inter', sans-serif;
+  font-size: .9rem; font-weight: 700; cursor: pointer; transition: all .22s;
+  box-shadow: 0 4px 16px rgba(26,58,42,.22); letter-spacing: .02em;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(26,58,42,.34); }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; background: #fff;
+  border: 1.5px solid var(--green-border); color: var(--green);
+  font-family: 'Inter', sans-serif; font-size: .86rem; font-weight: 600;
+  cursor: pointer; transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-secondary:hover { background: var(--green-mist); border-color: var(--green); }
+.btn-spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none; }
+
+.error-banner {
+  display: none; padding: 11px 16px; margin-bottom: 16px;
+  background: rgba(220,38,38,.07); border: 1px solid rgba(220,38,38,.28);
+  border-left: 3px solid #DC2626; color: #DC2626; font-size: .82rem; line-height: 1.5;
+}
+.error-banner.show { display: block; }
+
+@media(max-width:600px){
+  .form-row-2 { grid-template-columns: 1fr; }
+  .answer-sticky { margin: 0 -16px 20px; }
+  .page-wrap { padding: 16px 12px 80px; }
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu"><span></span><span></span><span></span></button>
+  <span class="header-ca-label">Good for You</span>
+  <span class="header-pill">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    PDF → Test
+  </span>
+</header>
+
+<div class="page-wrap">
+
+  <!-- STEPPER -->
+  <div class="stepper">
+    <div class="step active" id="step1"><div class="step-num">1</div><div class="step-label">Upload</div></div>
+    <div class="step" id="step2"><div class="step-num">2</div><div class="step-label">Reading</div></div>
+    <div class="step" id="step3"><div class="step-num">3</div><div class="step-label">Mark Answers</div></div>
+    <div class="step" id="step4"><div class="step-num">4</div><div class="step-label">Publish</div></div>
+    <div class="step" id="step5"><div class="step-num">✓</div><div class="step-label">Done</div></div>
+  </div>
+
+  <!-- ═══════════════ PHASE 1: UPLOAD ═══════════════ -->
+  <div class="phase active" id="phase-upload">
+
+    <div class="section-eyebrow">Step 1 — Upload your paper</div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" accept=".pdf" id="pdfInput" onchange="onFileChosen(this.files[0])">
+      <div class="drop-icon">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <div class="drop-title">Drop your question paper PDF here</div>
+      <div class="drop-sub">or tap to browse files from your device</div>
+      <div class="drop-note">PDF only · Max 10 MB · Text-based PDFs work best</div>
+    </div>
+
+    <div class="file-chosen" id="fileChosen">
+      <div class="file-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div>
+        <div class="file-name" id="fileNameDisplay"></div>
+        <div class="file-size" id="fileSizeDisplay"></div>
+      </div>
+      <button class="file-remove" onclick="clearFile()">✕ Remove</button>
+    </div>
+
+    <div class="upload-form-card">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Test Settings
+      </h3>
+
+      <div class="form-grp">
+        <label>Test Name *</label>
+        <input type="text" id="testName" placeholder="e.g. CA Foundation Paper 1 — Mock Test 3">
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-grp">
+          <label>Duration (minutes)</label>
+          <input type="number" id="testDuration" placeholder="e.g. 120" min="1">
+        </div>
+        <div class="form-grp">
+          <label>Marks per Correct Answer</label>
+          <input type="number" id="marksCorrect" placeholder="e.g. 1" min="0.01" step="0.01" value="1">
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-grp">
+          <label>Negative Marking?</label>
+          <select id="negativeMarking" onchange="toggleNegRow()">
+            <option value="no">No — No deduction</option>
+            <option value="yes">Yes — Deduct for wrong</option>
+          </select>
+        </div>
+        <div class="form-grp neg-marks-row" id="negMarksRow">
+          <label>Marks Deducted per Wrong</label>
+          <input type="number" id="marksWrong" placeholder="e.g. 0.25" min="0.01" step="0.01" value="0.25">
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-grp">
+          <label>Randomise Question Order?</label>
+          <select id="randomize">
+            <option value="no">No — Same for all students</option>
+            <option value="yes">Yes — Shuffle per student</option>
+          </select>
+        </div>
+        <div class="form-grp">
+          <label>Organisation Code *</label>
+          <input type="text" id="orgCode" placeholder="Your org code" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;" oninput="this.value=this.value.toUpperCase()">
+        </div>
+      </div>
+
+      <div class="form-grp">
+        <label>Special Instructions <span class="opt-tag">(optional)</span></label>
+        <textarea id="customInstructions" rows="2" placeholder='e.g. "Only extract the first 50 questions" or "Ignore the Roman Numerals chapter" or "Skip the case-study section"'></textarea>
+        <div class="form-grp-hint">Tell the AI what to include, skip, or limit — useful for long papers or ones with mixed/unusable sections. Applied to every part of the paper as it's read.</div>
+      </div>
+
+      <div class="error-banner" id="uploadError"></div>
+
+      <button class="btn-primary" style="width:100%;margin-top:4px;" onclick="startExtraction()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Read My Paper with AI
+        <div class="btn-spinner" id="uploadSpinner"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PHASE 2: LOADING ═══════════════ -->
+  <div class="phase" id="phase-loading">
+    <div class="loading-card">
+      <div class="ai-spinner"></div>
+      <div class="loading-title">Reading your paper…</div>
+      <div class="loading-sub" id="loadingSub">Our AI is identifying questions, options, passages,<br>and answers from your PDF.</div>
+      <div class="load-steps" id="loadSteps"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PHASE 3: MARK ANSWERS ═══════════════ -->
+  <div class="phase" id="phase-answers">
+
+    <!-- sticky progress bar -->
+    <div class="answer-sticky" id="answerSticky">
+      <div class="ans-progress-track"><div class="ans-progress-fill" id="ansProgressFill" style="width:0%"></div></div>
+      <div class="ans-count" id="ansCount">0 / 0 answered</div>
+      <div class="ans-flag" id="ansFlag">⚠ Some unanswered</div>
+    </div>
+
+    <div class="section-eyebrow">Step 3 — Review questions &amp; mark correct answers</div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;line-height:1.65;">
+      Check each question extracted from your PDF. <strong style="color:var(--green-dim)">Tap the correct option</strong> to mark it as the answer.
+      You can also edit or delete any question that was extracted incorrectly.
+      Questions where answers were already found in the PDF are pre-marked in gold.
+    </p>
+
+    <div class="error-banner" id="answerError"></div>
+    <div class="q-cards-wrap" id="qCardsWrap"></div>
+
+    <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-secondary" onclick="goToPhase('upload')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Start Over
+      </button>
+      <button class="btn-primary" style="flex:1;" onclick="proceedToPublish()">
+        Continue to Publish
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PHASE 4: PUBLISH ═══════════════ -->
+  <div class="phase" id="phase-publish">
+    <div class="section-eyebrow">Step 4 — Confirm &amp; publish</div>
+
+    <div class="pub-card">
+      <h3>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Test Summary
+      </h3>
+      <div class="pub-summary" id="pubSummary"></div>
+
+      <div class="form-grp">
+        <label>Confirm Organisation Code</label>
+        <input type="text" id="pubOrgConfirm" placeholder="Type your org code to confirm" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;" oninput="this.value=this.value.toUpperCase()">
+        <div class="form-grp-hint">Type your org code to confirm before publishing.</div>
+      </div>
+
+      <div class="error-banner" id="pubError"></div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn-secondary" onclick="goToPhase('answers')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back
+        </button>
+        <button class="btn-primary" id="publishBtn" style="flex:1;" onclick="publishTest()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+          <span id="publishBtnText">Publish Test</span>
+          <div class="btn-spinner" id="publishSpinner"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PHASE 5: SUCCESS ═══════════════ -->
+  <div class="phase" id="phase-success">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-title">Test Published!</div>
+      <div class="success-sub" id="successMsg"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <a href="admin.html" class="btn-secondary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back to Admin
+        </a>
+        <button class="btn-primary" onclick="resetAll()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Upload Another PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════
+   PDF → TEST  (pdf-to-test.html)
+   Flow: Upload → AI Extract (batched) → Mark Answers → Publish
+════════════════════════════════════════════════════ */
+
+initFirebase();
+initBgCanvas();
+injectDrawer('');   // injects nav + overlay HTML and wires up hamburger/close/user card
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const BATCH_SIZE = 50; // questions per AI extraction call
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* ── State ── */
+let chosenFile    = null;
+let extractedQs   = [];   // [{q, opts, ans, passage, section, exp, image, imageCaption}]
+let testSettings  = {};
+let imageMap      = {};   // token ("IMG_1") -> data URI, built once during PDF.js extraction
+
+/* ── Auth gate: only teachers and admins ── */
+(async function initAuth() {
+  const auth = await requireAdmin(); // redirects on failure, shows its own toast
+  if (!auth) return;
+  const org = auth.orgCode;
+  if (org) document.getElementById('orgCode').value = org;
+})();
+
+/* ── Phase navigation ── */
+const PHASES = ['upload','loading','answers','publish','success'];
+const STEPS  = [1,2,3,4,5];
+
+function goToPhase(name) {
+  PHASES.forEach(p => document.getElementById('phase-' + p).classList.remove('active'));
+  document.getElementById('phase-' + name).classList.add('active');
+
+  const idx = PHASES.indexOf(name);
+  STEPS.forEach((s, i) => {
+    const el = document.getElementById('step' + s);
+    el.classList.remove('active', 'done');
+    if (i < idx)  el.classList.add('done');
+    if (i === idx) el.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Negative marking toggle ── */
+function toggleNegRow() {
+  document.getElementById('negMarksRow').classList.toggle(
+    'show', document.getElementById('negativeMarking').value === 'yes'
+  );
+}
+
+/* ── File handling ── */
+function onFileChosen(file) {
+  if (!file) return;
+  if (file.type !== 'application/pdf') { showToast('Please choose a PDF file.', 'error'); return; }
+  if (file.size > 10 * 1024 * 1024)    { showToast('File is too large — max 10 MB.', 'error'); return; }
+  chosenFile = file;
+  document.getElementById('fileNameDisplay').textContent = file.name;
+  document.getElementById('fileSizeDisplay').textContent = (file.size / 1024).toFixed(0) + ' KB';
+  document.getElementById('fileChosen').classList.add('show');
+  if (!document.getElementById('testName').value) {
+    document.getElementById('testName').value = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ');
+  }
+}
+function clearFile() {
+  chosenFile = null;
+  document.getElementById('pdfInput').value = '';
+  document.getElementById('fileChosen').classList.remove('show');
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) onFileChosen(file);
+});
+
+/* ── STEP 1 → Start extraction ── */
+async function startExtraction() {
+  const errEl = document.getElementById('uploadError');
+  errEl.classList.remove('show');
+
+  const name = document.getElementById('testName').value.trim();
+  const org  = document.getElementById('orgCode').value.trim().toUpperCase();
+
+  if (!chosenFile) { errEl.textContent = 'Please choose a PDF file first.'; errEl.classList.add('show'); return; }
+  if (!name)        { errEl.textContent = 'Please enter a test name.'; errEl.classList.add('show'); return; }
+  if (!org)         { errEl.textContent = 'Please enter your organisation code.'; errEl.classList.add('show'); return; }
+
+  testSettings = {
+    title:          name,
+    orgCode:        org,
+    durationMinutes: parseFloat(document.getElementById('testDuration').value) || 0,
+    marksCorrect:   parseFloat(document.getElementById('marksCorrect').value) || 1,
+    negativeMarking: document.getElementById('negativeMarking').value === 'yes',
+    marksWrong:     parseFloat(document.getElementById('marksWrong').value) || 0,
+    randomizeQuestions: document.getElementById('randomize').value === 'yes',
+  };
+  const instructions = document.getElementById('customInstructions').value.trim().slice(0, 600);
+
+  document.getElementById('uploadSpinner').style.display = 'inline-block';
+  document.querySelector('#phase-upload .btn-primary').disabled = true;
+
+  goToPhase('loading');
+  try {
+    await extractFromPDF(instructions);
+  } finally {
+    document.getElementById('uploadSpinner').style.display = 'none';
+    document.querySelector('#phase-upload .btn-primary').disabled = false;
+  }
+}
+
+/* ── Loading step UI (built dynamically — step count depends on batch count) ── */
+function setLoadSteps(labels) {
+  const wrap = document.getElementById('loadSteps');
+  wrap.innerHTML = labels.map((label, i) =>
+    `<div class="load-step" id="ls${i}"><div class="ls-dot"></div><span id="lsText${i}">${label}</span></div>`
+  ).join('');
+}
+function markStep(i, state) { // state: 'active' | 'done'
+  const el = document.getElementById('ls' + i);
+  if (!el) return;
+  el.classList.remove('active', 'done');
+  el.classList.add(state);
+}
+function relabelStep(i, text) {
+  const el = document.getElementById('lsText' + i);
+  if (el) el.textContent = text;
+}
+
+/* ── STEP 2 → PDF.js extraction (text + images) then batched AI calls ── */
+async function extractFromPDF(instructions) {
+  setLoadSteps(['Extracting text from your paper…', 'Finding questions &amp; splitting into batches…', 'Structuring your test…']);
+  markStep(0, 'active');
+
+  try {
+    const arrayBuffer = await chosenFile.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    imageMap = {};
+    let imgCounter = 0;
+    const lines = []; // global, page order preserved: { text, isImage, token? }
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const scale = 2;
+      const viewport = page.getViewport({ scale });
+
+      const [textContent, imageBoxes] = await Promise.all([
+        page.getTextContent(),
+        extractPageImageBoxes(page, viewport),
+      ]);
+
+      let pageCanvas = null;
+      if (imageBoxes.length) {
+        pageCanvas = document.createElement('canvas');
+        pageCanvas.width = viewport.width;
+        pageCanvas.height = viewport.height;
+        await page.render({ canvasContext: pageCanvas.getContext('2d'), viewport }).promise;
+      }
+
+      // Cluster text items into lines by y-position, sorted top-to-bottom / left-to-right.
+      const items = textContent.items
+        .filter(it => it.str && it.str.trim())
+        .map(it => ({ y: it.transform[5], x: it.transform[4], str: it.str }))
+        .sort((a, b) => b.y - a.y || a.x - b.x);
+
+      const Y_TOL = 3;
+      const pageLines = [];
+      let cur = null;
+      for (const it of items) {
+        if (cur && Math.abs(cur.y - it.y) <= Y_TOL) {
+          cur.text += (cur.text.endsWith(' ') ? '' : ' ') + it.str;
+        } else {
+          cur = { y: it.y, text: it.str, isImage: false };
+          pageLines.push(cur);
+        }
+      }
+
+      // Image placeholder lines, inserted by vertical position.
+      imageBoxes.forEach(box => {
+        if (box.canvasW < 40 || box.canvasH < 40) return; // skip icons/logos
+        imgCounter++;
+        const token = 'IMG_' + imgCounter;
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = box.canvasW;
+        cropCanvas.height = box.canvasH;
+        cropCanvas.getContext('2d').drawImage(
+          pageCanvas, box.canvasX, box.canvasY, box.canvasW, box.canvasH, 0, 0, box.canvasW, box.canvasH
+        );
+        imageMap[token] = cropCanvas.toDataURL('image/png');
+        pageLines.push({ y: box.pdfTopY, text: `[[${token}]]`, isImage: true, token });
+      });
+
+      pageLines.sort((a, b) => b.y - a.y);
+      lines.push(...pageLines);
+    }
+
+    if (!lines.some(l => !l.isImage && l.text.trim())) {
+      throw new Error('No readable text was found. Make sure the PDF isn\u2019t a scanned image.');
+    }
+
+    markStep(0, 'done');
+    markStep(1, 'active');
+
+    // ── Detect question boundaries and split into batches ──
+    const boundaries = detectQuestionBoundaries(lines);
+    if (!boundaries.length) {
+      throw new Error('No questions could be found in this PDF. Make sure it\u2019s a multiple-choice question paper.');
+    }
+
+    const capMatch = instructions.match(/\bfirst\s+(\d+)\b/i);
+    const cap = capMatch ? parseInt(capMatch[1], 10) : null;
+    const usableBoundaries = (cap && cap < boundaries.length) ? boundaries.slice(0, cap) : boundaries;
+
+    const batches = buildBatches(lines, usableBoundaries);
+    markStep(1, 'done');
+
+    // Add per-batch loading steps now that we know the real count.
+    if (batches.length > 1) {
+      const batchLabels = batches.map((_, i) => `Structuring batch ${i + 1} of ${batches.length}…`);
+      setLoadSteps(['Extracting text from your paper…', `Found ${usableBoundaries.length} questions — split into ${batches.length} batches`, ...batchLabels]);
+      markStep(0, 'done');
+      markStep(1, 'done');
+    } else {
+      relabelStep(2, `Structuring your ${usableBoundaries.length} questions…`);
+    }
+
+    // ── Sequential batch calls to the AI ──
+    const stepOffset = 2;
+    let allQuestions = [];
+    for (let b = 0; b < batches.length; b++) {
+      markStep(stepOffset + b, 'active');
+      if (b > 0) await sleep(1200); // small stagger between calls, avoids bursting past rate limits
+      const res = await fetch('/.netlify/functions/extract-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: batches[b], filename: chosenFile.name, instructions }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || `Reading batch ${b + 1} of ${batches.length} failed. Please try again.`);
+      }
+      const batchQs = (data.questions || []).map(q => {
+        const image = q.imageRef && imageMap[q.imageRef] ? imageMap[q.imageRef] : null;
+        return {
+          q: q.q, opts: q.opts,
+          ans: (typeof q.ans === 'number') ? q.ans : null,
+          section: q.section || '', passage: q.passage || '', exp: '',
+          image, imageCaption: '',
+        };
+      });
+      allQuestions = allQuestions.concat(batchQs);
+      markStep(stepOffset + b, 'done');
+    }
+
+    if (!allQuestions.length) {
+      throw new Error('No questions could be extracted from this PDF. Make sure it\u2019s a text-based PDF, not a scanned image.');
+    }
+
+    extractedQs = allQuestions;
+    buildAnswerCards();
+    goToPhase('answers');
+
+  } catch (e) {
+    showToast(e.message || 'Something went wrong. Please try again.', 'error');
+    goToPhase('upload');
+  }
+}
+
+/* Detect question-number boundaries at the start of each text line.
+   Handles: "Q1)" "Question 1." "Q.4" (no trailing punctuation) "(1)"
+   "1)" "1." "Q1" (bare).
+
+   Two passes:
+   1. Collect every line that LOOKS like a question-number prefix.
+   2. Discard short runs of consecutive-line candidates that count up
+      from 1 (e.g. "1) 2) 3) 4)" each on its own line) — that's the
+      signature of an option list, not real question numbers.
+   Only what's left is walked in sequence, accepting a number that
+   continues the running count, or restarts at 1 (a new chapter). This
+   two-pass shape is what keeps option labels from being mistaken for
+   new questions, even when a whole option block sits between two real
+   questions with nothing else around it. */
+function detectQuestionBoundaries(lines) {
+  const RE = /^(?:Q(?:uestion)?\.?\s*(\d+)(?=[\.\)\s]|$)|\((\d+)\)|(\d+)[\.\)])/i;
+
+  const candidates = [];
+  lines.forEach((line, i) => {
+    if (line.isImage) return;
+    const trimmed = line.text.trim();
+    const m = trimmed.match(RE);
+    if (!m) return;
+    const num = parseInt(m[1] || m[2] || m[3], 10);
+    const rest = trimmed.slice(m[0].length).trim();
+    if (rest.length < 3) return; // guards against stray page numbers etc.
+    candidates.push({ lineIndex: i, num });
+  });
+
+  const discarded = new Set();
+  let runStart = 0;
+  for (let i = 1; i <= candidates.length; i++) {
+    const brokeRun = i === candidates.length
+      || candidates[i].lineIndex !== candidates[i - 1].lineIndex + 1
+      || candidates[i].num !== candidates[i - 1].num + 1;
+    if (brokeRun) {
+      const runLen = i - runStart;
+      if (runLen >= 2 && runLen <= 6 && candidates[runStart].num === 1) {
+        for (let k = runStart; k < i; k++) discarded.add(k);
+      }
+      runStart = i;
+    }
+  }
+
+  const boundaries = [];
+  let expected = null;
+  candidates.forEach((c, idx) => {
+    if (discarded.has(idx)) return;
+    if (expected === null) {
+      boundaries.push(c); expected = c.num + 1;
+    } else if (c.num === expected) {
+      boundaries.push(c); expected = c.num + 1;
+    } else if (c.num === 1 && expected > 1) {
+      boundaries.push(c); expected = 2; // new chapter/section, numbering reset
+    }
+    // else: doesn't continue the sequence — ignore it.
+  });
+
+  return boundaries;
+}
+
+/* Split the line stream into batches of BATCH_SIZE questions each. The
+   trailing text after the very last detected question (often an answer
+   key) is appended to EVERY batch, not just the last, so batches earlier
+   in the paper can still resolve their answers from a key at the end. */
+function buildBatches(lines, boundaries) {
+  const totalQ = boundaries.length;
+  const numBatches = Math.max(1, Math.ceil(totalQ / BATCH_SIZE));
+  const ranges = [];
+
+  for (let b = 0; b < numBatches; b++) {
+    const startIdx = b * BATCH_SIZE;
+    const endIdx = Math.min(startIdx + BATCH_SIZE, totalQ) - 1;
+    const startLine = b === 0 ? 0 : boundaries[startIdx].lineIndex;
+    const endLineExclusive = (endIdx + 1 < totalQ) ? boundaries[endIdx + 1].lineIndex : lines.length;
+    ranges.push({ startLine, endLineExclusive });
+  }
+
+  // Heuristic trailing answer-key detection: last stretch of lines after
+  // the final question, if they look like short "Q# - answer" entries.
+  let tailText = '';
+  if (numBatches > 1) {
+    const lastQLine = boundaries[boundaries.length - 1].lineIndex;
+    const tailLines = lines.slice(lastQLine, lines.length).filter(l => !l.isImage);
+    const shortAnswerish = tailLines.filter(l => /^\(?\d+\)?[\s\-:.]+[a-dA-D]\b/.test(l.text.trim()) || /answer/i.test(l.text)).length;
+    if (tailLines.length && shortAnswerish / tailLines.length > 0.3) {
+      tailText = '\n' + tailLines.map(l => l.text).join('\n');
+    }
+  }
+
+  return ranges.map((r, i) => {
+    const bodyLines = lines.slice(r.startLine, r.endLineExclusive);
+    const bodyText = bodyLines.map(l => l.text).join('\n');
+    const isLast = i === ranges.length - 1;
+    return bodyText + (tailText && !isLast ? tailText : '');
+  });
+}
+
+/* Walk a page's drawing operators to find each image's exact placement —
+   both in PDF page space (for ordering against text) and canvas pixel
+   space (for cropping the rendered page). Best-effort: if nothing is
+   found, that page simply has no image attached to any question. */
+async function extractPageImageBoxes(page, viewport) {
+  const opList = await page.getOperatorList();
+  const OPS = pdfjsLib.OPS;
+  const { fnArray, argsArray } = opList;
+
+  let ctm = [1, 0, 0, 1, 0, 0];
+  const stack = [];
+  const boxes = [];
+
+  for (let i = 0; i < fnArray.length; i++) {
+    const fn = fnArray[i];
+    if (fn === OPS.save) {
+      stack.push(ctm.slice());
+    } else if (fn === OPS.restore) {
+      ctm = stack.pop() || ctm;
+    } else if (fn === OPS.transform) {
+      ctm = matMul(ctm, argsArray[i]);
+    } else if (fn === OPS.paintImageXObject || fn === OPS.paintJpegXObject || fn === OPS.paintInlineImageXObject) {
+      const canvasM = matMul(viewport.transform, ctm);
+      const corners = [[0, 0], [1, 0], [0, 1], [1, 1]].map(p => applyMat(canvasM, p));
+      const xs = corners.map(c => c[0]);
+      const ys = corners.map(c => c[1]);
+      const canvasX = Math.max(0, Math.min(...xs));
+      const canvasY = Math.max(0, Math.min(...ys));
+      const canvasW = Math.min(viewport.width, Math.max(...xs)) - canvasX;
+      const canvasH = Math.min(viewport.height, Math.max(...ys)) - canvasY;
+
+      const pdfCorners = [[0, 0], [1, 0], [0, 1], [1, 1]].map(p => applyMat(ctm, p));
+      const pdfTopY = Math.max(...pdfCorners.map(c => c[1]));
+
+      if (canvasW > 0 && canvasH > 0) boxes.push({ canvasX, canvasY, canvasW, canvasH, pdfTopY });
+    }
+  }
+  return boxes;
+}
+function matMul(a, b) {
+  return [
+    a[0]*b[0]+a[2]*b[1], a[1]*b[0]+a[3]*b[1],
+    a[0]*b[2]+a[2]*b[3], a[1]*b[2]+a[3]*b[3],
+    a[0]*b[4]+a[2]*b[5]+a[4], a[1]*b[4]+a[3]*b[5]+a[5],
+  ];
+}
+function applyMat(m, p) { return [m[0]*p[0]+m[2]*p[1]+m[4], m[1]*p[0]+m[3]*p[1]+m[5]]; }
+
+/* ── STEP 3 → Build answer-marking cards ── */
+const OPT_LETTERS = ['A','B','C','D','E','F'];
+
+function buildAnswerCards() {
+  const wrap = document.getElementById('qCardsWrap');
+  wrap.innerHTML = '';
+
+  extractedQs.forEach((q, i) => {
+    const card = document.createElement('div');
+    card.className = 'pq-card' + (q.ans !== null && q.ans !== undefined ? ' answered' : '');
+    card.id = 'pqcard-' + i;
+    card.style.animationDelay = Math.min(i * 0.04, 0.6) + 's';
+
+    let passageHtml = '';
+    if (q.passage) {
+      passageHtml = `<div class="pq-passage"><div class="pq-passage-label">📖 Passage / Case Study</div>${escHtml(q.passage)}</div>`;
+    }
+    let imageHtml = '';
+    if (q.image) {
+      imageHtml = `<div class="pq-image-wrap">
+        <img src="${q.image}" alt="Question diagram">
+        <input type="text" class="pq-image-caption-input" placeholder="Add a caption (optional)" value="${escHtml(q.imageCaption || '')}" oninput="updateCaption(${i}, this.value)">
+      </div>`;
+    }
+    let sectionHtml = q.section ? `<div class="pq-section-badge">${escHtml(q.section)}</div>` : '';
+    const preMarked = q.ans !== null && q.ans !== undefined;
+
+    const optsHtml = (q.opts || []).map((opt, j) => `
+      <div class="pq-opt${q.ans === j ? ' selected' : ''}" id="pqopt-${i}-${j}" onclick="selectAnswer(${i},${j})">
+        <div class="pq-radio"><div class="pq-radio-dot"></div></div>
+        <span class="pq-opt-letter">${OPT_LETTERS[j]})</span>
+        <span class="pq-opt-text">${escHtml(opt)}</span>
+      </div>`).join('');
+
+    const preBadge = preMarked
+      ? `<span style="font-size:.68rem;color:#B8962E;font-weight:700;background:rgba(184,150,46,.1);border:1px solid rgba(184,150,46,.3);padding:2px 8px;">✦ Answer found in PDF</span>`
+      : `<span style="font-size:.68rem;color:var(--muted);">Tap the correct option above</span>`;
+
+    card.innerHTML = `
+      ${sectionHtml}
+      ${passageHtml}
+      ${imageHtml}
+      <div class="pq-header">
+        <div class="pq-num${preMarked ? ' answered-num' : ''}" id="pqnum-${i}">${i + 1}</div>
+        <div class="pq-text">${escHtml(q.q)}</div>
+      </div>
+      <div class="pq-opts">${optsHtml}</div>
+      <div class="pq-edit-row">
+        ${preBadge}
+        <button class="pq-edit-btn pq-del-btn" onclick="deleteQuestion(${i})">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Remove
+        </button>
+      </div>
+      <div class="pq-exp-label">Explanation (optional)</div>
+      <textarea class="pq-exp-input" id="pqexp-${i}" placeholder="Add an explanation for this answer (optional)…" rows="2">${escHtml(q.exp || '')}</textarea>
+    `;
+    wrap.appendChild(card);
+  });
+
+  updateAnswerProgress();
+}
+
+function updateCaption(qIdx, value) { extractedQs[qIdx].imageCaption = value; }
+
+function selectAnswer(qIdx, optIdx) {
+  extractedQs[qIdx].ans = optIdx;
+  const card = document.getElementById('pqcard-' + qIdx);
+  card.classList.add('answered');
+  card.classList.remove('unanswered-err');
+  document.getElementById('pqnum-' + qIdx).classList.add('answered-num');
+  (extractedQs[qIdx].opts || []).forEach((_, j) => {
+    document.getElementById(`pqopt-${qIdx}-${j}`)?.classList.toggle('selected', j === optIdx);
+  });
+  updateAnswerProgress();
+}
+
+function deleteQuestion(qIdx) {
+  extractedQs.splice(qIdx, 1);
+  buildAnswerCards();
+  showToast('Question removed.', 'info');
+}
+
+function updateAnswerProgress() {
+  const total    = extractedQs.length;
+  const answered = extractedQs.filter(q => q.ans !== null && q.ans !== undefined).length;
+  const pct      = total ? (answered / total) * 100 : 0;
+  document.getElementById('ansProgressFill').style.width = pct + '%';
+  document.getElementById('ansCount').textContent = answered + ' / ' + total + ' answered';
+  document.getElementById('ansFlag').classList.toggle('show', answered < total && total > 0);
+}
+
+/* ── Proceed to publish ── */
+function proceedToPublish() {
+  extractedQs.forEach((q, i) => {
+    q.exp = document.getElementById('pqexp-' + i)?.value.trim() || '';
+  });
+
+  const unanswered = extractedQs.map((q, i) => [q, i]).filter(([q]) => q.ans === null || q.ans === undefined);
+  if (unanswered.length) {
+    document.getElementById('answerError').textContent =
+      `${unanswered.length} question${unanswered.length > 1 ? 's' : ''} still need${unanswered.length === 1 ? 's' : ''} an answer marked. They are highlighted in red below.`;
+    document.getElementById('answerError').classList.add('show');
+    unanswered.forEach(([, i]) => {
+      const c = document.getElementById('pqcard-' + i);
+      c?.classList.add('unanswered-err');
+      if (unanswered[0][1] === i) c?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return;
+  }
+  document.getElementById('answerError').classList.remove('show');
+
+  if (!extractedQs.length) {
+    document.getElementById('answerError').textContent = 'No questions left. Please upload the PDF again.';
+    document.getElementById('answerError').classList.add('show');
+    return;
+  }
+
+  const s = testSettings;
+  document.getElementById('pubSummary').innerHTML =
+    `<strong>${escHtml(s.title)}</strong> — ${extractedQs.length} questions · ` +
+    `${s.durationMinutes ? s.durationMinutes + ' min' : 'No time limit'} · ` +
+    `${s.marksCorrect} mark${s.marksCorrect !== 1 ? 's' : ''} per correct answer` +
+    (s.negativeMarking ? ` · −${s.marksWrong} per wrong` : '') +
+    (s.randomizeQuestions ? ' · Randomised order' : '') +
+    `<br>Org: <strong>${escHtml(s.orgCode)}</strong>`;
+
+  document.getElementById('pubOrgConfirm').value = '';
+  goToPhase('publish');
+}
+
+/* ── STEP 4 → Publish to Firestore ── */
+async function publishTest() {
+  const errEl  = document.getElementById('pubError');
+  const btn    = document.getElementById('publishBtn');
+  const spinner = document.getElementById('publishSpinner');
+  errEl.classList.remove('show');
+
+  const confirmed = document.getElementById('pubOrgConfirm').value.trim().toUpperCase();
+  if (confirmed !== testSettings.orgCode) {
+    errEl.textContent = 'Organisation code does not match. Please type it exactly as shown.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  document.getElementById('publishBtnText').textContent = 'Publishing…';
+  spinner.style.display = 'inline-block';
+
+  try {
+    const questions = extractedQs.map(q => ({
+      q:       q.q,
+      opts:    q.opts,
+      ans:     q.ans,
+      exp:     q.exp || '',
+      section: q.section || '',
+      passage: q.passage || '',
+      image:   q.image || null,
+      imageCaption: q.imageCaption || '',
+    }));
+
+    const s = testSettings;
+    const docData = {
+      title:              s.title,
+      orgCode:            s.orgCode,
+      durationMinutes:    s.durationMinutes,
+      marksCorrect:       s.marksCorrect,
+      negativeMarking:    s.negativeMarking,
+      marksWrong:         s.negativeMarking ? s.marksWrong : 0,
+      randomizeQuestions: s.randomizeQuestions,
+      questions,
+      active:      true,
+      source:      'pdf',
+      createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const ref = await window.db.collection('tests').add(docData);
+
+    document.getElementById('successMsg').textContent =
+      `"${s.title}" is now live for ${s.orgCode} with ${questions.length} questions. Students can find it on their dashboard.`;
+
+    goToPhase('success');
+    showToast('Test published successfully!');
+  } catch(e) {
+    console.error(e);
+    errEl.textContent = 'Failed to publish: ' + (e.message || 'Unknown error. Please try again.');
+    errEl.classList.add('show');
+    btn.disabled = false;
+    document.getElementById('publishBtnText').textContent = 'Publish Test';
+    spinner.style.display = 'none';
+  }
+}
+
+/* ── Reset ── */
+function resetAll() {
+  chosenFile   = null;
+  extractedQs  = [];
+  testSettings = {};
+  imageMap     = {};
+  document.getElementById('pdfInput').value = '';
+  document.getElementById('fileChosen').classList.remove('show');
+  document.getElementById('testName').value = '';
+  document.getElementById('customInstructions').value = '';
+  document.getElementById('qCardsWrap').innerHTML = '';
+  goToPhase('upload');
+}
+</script>
+</body>
+</html>
