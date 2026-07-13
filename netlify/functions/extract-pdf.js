@@ -84,7 +84,7 @@ Return ONLY the JSON object. Nothing else.`;
 
 function buildSystemPrompt(instructions) {
   if (!instructions) return SYSTEM_PROMPT;
-  return SYSTEM_PROMPT + `\n\nTEACHER'S INSTRUCTIONS — follow these strictly, they override the default extraction behavior above where they conflict:\n"""${instructions}"""\nIf these instructions say to skip, ignore, or exclude something, do not include it in "questions" at all. If they impose a limit (e.g. "only the first N questions"), respect that limit even if more questions are present in the text.`;
+  return SYSTEM_PROMPT + `\n\nTEACHER'S INSTRUCTIONS — follow these strictly, they override the default extraction behavior above where they conflict:\n"""${instructions}"""\nIf these instructions say to skip, ignore, or exclude something, do not include it in "questions" at all. If they impose a limit (e.g. "only the first N questions"), respect that limit even if more questions are present in the text.\n\nRegardless of the instructions above, your entire response must still be ONLY the JSON object described earlier — no preamble like "Sure, here are...", no commentary, no markdown fences, nothing before or after the JSON.`;
 }
 
 exports.handler = async (event) => {
@@ -127,24 +127,36 @@ exports.handler = async (event) => {
   }
 
   let groqRes;
-  try {
-    groqRes = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        temperature: 0.1,
-        max_tokens: 8000,
-        messages: [
-          { role: 'system', content: buildSystemPrompt(instructions) },
-          { role: 'user', content: `Filename: ${String(body.filename || 'paper.pdf')}\n\nExtracted text:\n\n${text}` },
-        ],
-      }),
-    });
-  } catch {
+  const MAX_RETRIES = 2; // total up to 3 attempts: 0, 1, 2
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      groqRes = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          temperature: 0.1,
+          max_tokens: 8000,
+          messages: [
+            { role: 'system', content: buildSystemPrompt(instructions) },
+            { role: 'user', content: `Filename: ${String(body.filename || 'paper.pdf')}\n\nExtracted text:\n\n${text}` },
+          ],
+        }),
+      });
+    } catch {
+      groqRes = null;
+    }
+
+    // Retry only on rate limiting or a network hiccup — not on other errors.
+    const shouldRetry = (!groqRes || groqRes.status === 429) && attempt < MAX_RETRIES;
+    if (!shouldRetry) break;
+    await sleep(1500 * Math.pow(2, attempt)); // 1.5s, then 3s
+  }
+
+  if (!groqRes) {
     return respond(502, { error: 'Couldn\u2019t reach the AI service. Check your connection and try again.' }, headers);
   }
 
@@ -172,7 +184,7 @@ exports.handler = async (event) => {
 
   let parsed;
   try {
-    parsed = JSON.parse(stripCodeFences(rawContent));
+    parsed = JSON.parse(extractJsonObject(stripCodeFences(rawContent)));
   } catch {
     return respond(502, { error: 'The AI reader sent back something unreadable. Please try again.' }, headers);
   }
@@ -190,11 +202,24 @@ function respond(statusCode, payload, headers) {
   return { statusCode, headers, body: JSON.stringify(payload) };
 }
 
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
 // Safety net in case the model wraps its answer in ```json fences despite instructions.
 function stripCodeFences(str) {
   const trimmed = str.trim();
   const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
   return fenced ? fenced[1] : trimmed;
+}
+
+// Safety net in case the model adds a preamble/commentary line before or
+// after the JSON despite instructions (more likely to happen once a
+// custom teacher instruction is in the prompt). Pulls out the outermost
+// {...} block rather than requiring the whole response to be pure JSON.
+function extractJsonObject(str) {
+  const first = str.indexOf('{');
+  const last = str.lastIndexOf('}');
+  if (first === -1 || last === -1 || last <= first) return str;
+  return str.slice(first, last + 1);
 }
 
 function sanitiseQuestion(raw) {
@@ -210,4 +235,4 @@ function sanitiseQuestion(raw) {
 
   return { q, opts, ans, section, passage, exp: '', imageRef };
 }
-   
+
