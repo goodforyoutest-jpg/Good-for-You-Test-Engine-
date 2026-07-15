@@ -21,7 +21,7 @@
      { questions: QuestionObject[], total: number }
 
    QuestionObject:
-     { q, opts, ans, section, passage, exp, imageRef }
+     { q, opts, ans, section, passage, exp, imageRef, imageRefUnconfirmed }
        q        — full question text, preserved exactly
        opts     — option texts, labels (A) (a) 1. etc stripped
        ans      — 0-indexed correct option (A=0..D=3), or null if unknown
@@ -33,7 +33,16 @@
                   extracted text was clearly associated with this
                   question, else null. The browser resolves these
                   tokens to actual cropped images — this function
-                  never sees image bytes.
+                  never sees image bytes. Tokens may carry an inline
+                  caption, e.g. "[[IMG_1]] (Fig. 1 — Quarterly Sales)" —
+                  prefer matching a token to a question by that caption
+                  or an explicit figure reference in the question text
+                  ("the chart below", "Fig. 4") over pure adjacency.
+       imageRefUnconfirmed — true if imageRef was set but the question
+                  text itself contains no visual-reference language
+                  (no "figure"/"diagram"/"chart"/"shown below" etc.) —
+                  a hint for the teacher to double-check that specific
+                  attachment rather than trust it blindly.
 
    Error responses: { error: string } with an appropriate status code.
    Error strings are teacher-facing — what to do, not what went wrong.
@@ -49,7 +58,7 @@ const MAX_TEXT_CHARS = 150000;
 
 const SYSTEM_PROMPT = `You are an expert at reading Indian CA Foundation exam papers and mock tests, and converting them into structured multiple-choice question data.
 
-You will receive the plain text extracted from a PDF question paper. The text may contain inline tokens like [[IMG_1]], [[IMG_2]] etc. — these mark where a diagram or image appeared in the original PDF, roughly at that position in the reading order.
+You will receive the plain text extracted from a PDF question paper. The text may contain inline tokens like [[IMG_1]], [[IMG_2]] etc. — these mark where a diagram or image appeared in the original PDF, roughly at that position in the reading order. A token is sometimes followed by a caption in parentheses, e.g. "[[IMG_1]] (Fig. 1 — Quarterly Sales, FY 2025-26)" — that caption is real text that was printed under the figure in the PDF, not something you need to verify.
 
 Return ONLY a single JSON object of this exact shape — no markdown, no code fences, no preamble, no explanation, nothing before or after the JSON:
 
@@ -62,7 +71,10 @@ Field rules:
 - section: the section, chapter, or paper name this question belongs to, if the text indicates one (e.g. "Section A", "Paper 1", "Chapter: Accounts"). Otherwise "".
 - passage: if this question is part of a passage or case-study block shared with other questions, copy the FULL passage text here (the same full text repeated on every question that shares it). Otherwise "".
 - exp: always "" — do not fill this in.
-- imageRef: if an [[IMG_n]] token appears immediately before, within, or right after this question's text (and clearly belongs to this question rather than a neighboring one), set this to the token's identifier, e.g. "IMG_1". Otherwise null. A token should be assigned to at most one question — the one it's most clearly associated with by position.
+- imageRef: set this to an [[IMG_n]] token's identifier (e.g. "IMG_1") only when you have a real reason to believe it belongs to THIS question. In order of preference:
+  1. The question (or its shared passage) explicitly names the figure the token's caption matches — "the bar chart below", "Fig. 2", "the diagram shown", "study the flowchart above" — and the caption text next to the token corresponds.
+  2. If there's no caption on the token, fall back to reading-order adjacency: the token appears immediately before, within, or right after this question's text, AND the question's own wording refers to a visual ("figure", "diagram", "chart", "shown above/below", "graph", "the table below" — not just any nearby text).
+  Do NOT assign a token to a question purely because it is the nearest one in reading order if the question's text never references a figure at all — plenty of tokens mark decorative page elements, not real content, and a plain arithmetic or definition question next to one should get imageRef: null. A token should be assigned to at most one question — the one it's most clearly associated with.
 
 What to extract:
 - Extract every MCQ question you can find in the text, in the order they appear.
@@ -233,6 +245,13 @@ function sanitiseQuestion(raw) {
   const passage = typeof raw.passage === 'string' ? raw.passage.trim() : '';
   const imageRef = typeof raw.imageRef === 'string' && raw.imageRef.trim() ? raw.imageRef.trim() : null;
 
-  return { q, opts, ans, section, passage, exp: '', imageRef };
+  // The system prompt already asks the model to only attach a token when
+  // the question references a figure, but models drift — this is a cheap,
+  // deterministic second check so a stray attachment surfaces as "please
+  // double-check this one" in the admin UI instead of silently shipping.
+  const VISUAL_REF = /\b(figure|diagram|chart|graph|shown\s+(above|below)|table\s+below|flowchart|pie\s*chart|bar\s*chart)\b/i;
+  const imageRefUnconfirmed = !!imageRef && !VISUAL_REF.test(q) && !VISUAL_REF.test(passage);
+
+  return { q, opts, ans, section, passage, exp: '', imageRef, imageRefUnconfirmed };
 }
 
