@@ -46,7 +46,18 @@
 
    Error responses: { error: string } with an appropriate status code.
    Error strings are teacher-facing — what to do, not what went wrong.
-═══════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════════    NOTE ON PASSAGE TEXT: admin.html now runs a vision-labeling pass
+   (netlify/functions/label-diagrams.js) before sending text here. Any
+   text sitting inside a region confirmed as a real diagram (a
+   flowchart's box labels, an org-chart's node names, etc.) has already
+   been stripped out client-side — you will only see a diagram's
+   "Fig. N — ..." caption line, never its internal label text. Don't
+   assume a passage containing scattered short words is a diagram
+   description to reconstruct; if it looks like scrambled labels rather
+   than prose, it's more likely leftover text from an unconfirmed region
+   (the vision call can fail soft) — treat it as ordinary passage text
+   and do your best, but don't invent structure that isn't there.
+*/
 
 const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
