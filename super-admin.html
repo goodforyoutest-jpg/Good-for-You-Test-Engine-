@@ -2137,8 +2137,28 @@ function toggleOrgDetail(code) {
   if (!itemEl || !detailEl) return;
 
   const isOpen = itemEl.classList.contains('od-open');
+ 
 
-  // ── NOTES ──
+  // Close previously open one
+  if (_odOpenCode && _odOpenCode !== code) {
+    const prevItem   = document.getElementById('od-item-' + _odOpenCode);
+    const prevDetail = document.getElementById('od-detail-' + _odOpenCode);
+    if (prevItem)   prevItem.classList.remove('od-open');
+    if (prevDetail) prevDetail.classList.remove('od-visible');
+  }
+
+  if (isOpen) {
+    itemEl.classList.remove('od-open');
+    detailEl.classList.remove('od-visible');
+    _odOpenCode = null;
+  } else {
+    itemEl.classList.add('od-open');
+    detailEl.classList.add('od-visible');
+    _odOpenCode = code;
+    setTimeout(() => itemEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+}
+    // ── NOTES ──
 async function uploadNote() {
   const title     = document.getElementById('noteTitle').value.trim();
   const column    = document.getElementById('noteColumn').value.trim();
@@ -2188,26 +2208,6 @@ async function deleteNote(noteId, title) {
     showToast('Note deleted.', 'info');
     loadNotes();
   } catch(e) { showToast('Failed to delete: ' + e.message, 'error'); }
-}
-
-  // Close previously open one
-  if (_odOpenCode && _odOpenCode !== code) {
-    const prevItem   = document.getElementById('od-item-' + _odOpenCode);
-    const prevDetail = document.getElementById('od-detail-' + _odOpenCode);
-    if (prevItem)   prevItem.classList.remove('od-open');
-    if (prevDetail) prevDetail.classList.remove('od-visible');
-  }
-
-  if (isOpen) {
-    itemEl.classList.remove('od-open');
-    detailEl.classList.remove('od-visible');
-    _odOpenCode = null;
-  } else {
-    itemEl.classList.add('od-open');
-    detailEl.classList.add('od-visible');
-    _odOpenCode = code;
-    setTimeout(() => itemEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-  }
 }
 
 initSuperAdmin();
