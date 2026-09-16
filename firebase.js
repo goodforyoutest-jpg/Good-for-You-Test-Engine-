@@ -14,6 +14,10 @@ const FIREBASE_CONFIG = {
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Cloudinary config (for Notes PDFs) ────────────────────────────────────
+const CLOUDINARY_CLOUD_NAME    = 'piwqv3hf';
+const CLOUDINARY_UPLOAD_PRESET = 'gfyte_notes';
+
 // Firebase SDK imports (loaded via CDN in each HTML file)
 // We store the initialized app references on window so all pages share them.
 
@@ -197,6 +201,33 @@ function initBgCanvas(canvasId = 'bg-canvas') {
   }
   resize(); createParticles(); draw();
   window.addEventListener('resize',()=>{resize();createParticles();});
+}
+
+/* ── NOTES: CLOUDINARY UPLOAD ── */
+async function uploadNotePdf(file) {
+  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/raw/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(url, { method: 'POST', body: formData });
+  if (!res.ok) throw new Error('Cloudinary upload failed (' + res.status + ')');
+  const data = await res.json();
+  return data.secure_url;
+}
+
+/* ── NOTES: FIRESTORE ── */
+async function getNotes() {
+  const snap = await window.db.collection('notes').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+async function addNoteDoc({ title, column, pdfUrl }) {
+  return window.db.collection('notes').add({
+    title, column: column || 'General', pdfUrl,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+async function deleteNoteDoc(noteId) {
+  return window.db.collection('notes').doc(noteId).delete();
 }
 
 /* ── UTILS ── */
