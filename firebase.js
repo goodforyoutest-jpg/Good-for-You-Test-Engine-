@@ -220,10 +220,10 @@ async function getNotes() {
   const snap = await window.db.collection('notes').orderBy('createdAt', 'desc').get();
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-async function addNoteDoc({ title, column, pdfUrl }) {
+async function addNoteDoc({ title, column, chapter, pdfUrl }) {
   return window.db.collection('notes').add({
-    title, column: column || 'General', pdfUrl,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    title, column: column || 'General', chapter: chapter || title,
+    pdfUrl, createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 async function deleteNoteDoc(noteId) {
