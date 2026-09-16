@@ -1106,8 +1106,12 @@ a, button, [onclick], label, input, select, textarea { -webkit-tap-highlight-col
     <div class="form-error"   id="noteFormError"   style="display:none;"></div>
     <div class="form-success" id="noteFormSuccess" style="display:none;"></div>
     <div class="form-group">
-      <label class="form-label">Note Title</label>
-      <input type="text" class="form-input" id="noteTitle" placeholder="e.g. Chapter 1 - Theoretical Framework">
+      <label class="form-label">Unit / Part Name</label>
+      <input type="text" class="form-input" id="noteTitle" placeholder="e.g. Unit 1 - Meaning and Scope">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Chapter / Topic</label>
+      <input type="text" class="form-input" id="noteChapter" placeholder="e.g. Chapter 1 - Theoretical Framework">
     </div>
     <div class="form-group">
       <label class="form-label">Subject / Column</label>
@@ -2162,10 +2166,11 @@ function toggleOrgDetail(code) {
 async function uploadNote() {
   const title     = document.getElementById('noteTitle').value.trim();
   const column    = document.getElementById('noteColumn').value.trim();
+  const chapter   = document.getElementById('noteChapter').value.trim();
   const fileInput = document.getElementById('notePdfFile');
   const file      = fileInput.files[0];
   clearMsg('noteFormError'); clearMsg('noteFormSuccess');
-  if (!title) { showMsg('noteFormError', 'Please enter a note title.'); return; }
+  if (!title) { showMsg('noteFormError', 'Please enter a unit/part name.'); return; }
   if (!file)  { showMsg('noteFormError', 'Please choose a PDF file.'); return; }
   if (file.type !== 'application/pdf') { showMsg('noteFormError', 'Only PDF files are allowed.'); return; }
 
@@ -2173,14 +2178,28 @@ async function uploadNote() {
   btn.disabled = true; btn.textContent = 'Uploading…';
   try {
     const pdfUrl = await uploadNotePdf(file);
-    await addNoteDoc({ title, column, pdfUrl });
+    await addNoteDoc({ title, column, chapter, pdfUrl });
     showMsg('noteFormSuccess', `"${title}" uploaded.`);
-    document.getElementById('noteTitle').value  = '';
-    document.getElementById('noteColumn').value = '';
+    document.getElementById('noteTitle').value   = '';
+    document.getElementById('noteChapter').value = '';
     fileInput.value = '';
     loadNotes();
   } catch(e) { showMsg('noteFormError', 'Upload failed: ' + e.message); }
   btn.disabled = false; btn.textContent = 'Upload Note';
+}
+
+let _notesGroups = [];
+
+function groupNotesByChapter(notes) {
+  const map = {};
+  notes.forEach(n => {
+    const col  = n.column || 'General';
+    const chap = n.chapter || n.title || 'Untitled';
+    const key  = col + '|||' + chap;
+    if (!map[key]) map[key] = { column: col, chapter: chap, notes: [] };
+    map[key].notes.push(n);
+  });
+  return Object.values(map);
 }
 
 async function loadNotes() {
@@ -2188,28 +2207,63 @@ async function loadNotes() {
   list.innerHTML = '<div class="empty-note">Loading…</div>';
   try {
     const notes = await getNotes();
-    if (notes.length === 0) { list.innerHTML = '<div class="empty-note">No notes uploaded yet.</div>'; return; }
-    list.innerHTML = notes.map(n => `
-      <div class="org-row">
-        <div class="org-code-badge">${escHtml(n.column || 'General')}</div>
-        <div class="org-info">
-          <div class="org-info-name">${escHtml(n.title || '—')}</div>
-        </div>
-        <a href="${n.pdfUrl}" target="_blank" class="toggle-btn" style="text-decoration:none;">View</a>
-        <button class="toggle-btn" style="background:rgba(185,28,28,.06);border-color:rgba(185,28,28,.22);color:#DC2626;" onclick="deleteNote('${n.id}','${escHtml(n.title||'this note')}')">Delete</button>
-      </div>`).join('');
+    _notesGroups = groupNotesByChapter(notes);
+    renderNotesAdmin();
   } catch(e) { list.innerHTML = `<div class="empty-note">Error loading: ${e.message}</div>`; }
 }
 
+function renderNotesAdmin() {
+  const list = document.getElementById('notesList');
+  if (_notesGroups.length === 0) { list.innerHTML = '<div class="empty-note">No notes uploaded yet.</div>'; return; }
+
+  list.innerHTML = _notesGroups.map((g, i) => {
+    if (g.notes.length === 1) {
+      const n = g.notes[0];
+      return `
+        <div class="org-row">
+          <div class="org-code-badge">${escHtml(g.column)}</div>
+          <div class="org-info"><div class="org-info-name">${escHtml(g.chapter)}</div></div>
+          <a href="${n.pdfUrl}" target="_blank" class="toggle-btn" style="text-decoration:none;">View</a>
+          <button class="toggle-btn" style="background:rgba(185,28,28,.06);border-color:rgba(185,28,28,.22);color:#DC2626;" onclick="deleteNote('${n.id}','${escHtml(n.title||'this note')}')">Delete</button>
+        </div>`;
+    }
+    return `
+      <div class="org-row" onclick="toggleNoteFolder(${i})" style="cursor:pointer;">
+        <div class="org-code-badge">${escHtml(g.column)}</div>
+        <div class="org-info">
+          <div class="org-info-name">${escHtml(g.chapter)}</div>
+          <div class="org-info-course">${g.notes.length} units</div>
+        </div>
+        <svg id="note-chev-${i}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .25s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div id="note-detail-${i}" style="display:none;border:1px solid var(--ivory-3);border-top:none;background:#fff;">
+        ${g.notes.map(n => `
+          <div class="org-row" style="padding-left:32px;">
+            <div class="org-info"><div class="org-info-name" style="font-size:.82rem;">${escHtml(n.title||'Untitled')}</div></div>
+            <a href="${n.pdfUrl}" target="_blank" class="toggle-btn" style="text-decoration:none;">View</a>
+            <button class="toggle-btn" style="background:rgba(185,28,28,.06);border-color:rgba(185,28,28,.22);color:#DC2626;" onclick="event.stopPropagation();deleteNote('${n.id}','${escHtml(n.title||'this note')}')">Delete</button>
+          </div>`).join('')}
+      </div>`;
+  }).join('');
+}
+
+function toggleNoteFolder(i) {
+  const detail = document.getElementById('note-detail-' + i);
+  const chev   = document.getElementById('note-chev-' + i);
+  const open = detail.style.display === 'block';
+  detail.style.display = open ? 'none' : 'block';
+  chev.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
 async function deleteNote(noteId, title) {
-  if (!confirm(`Delete note "${title}"?\n\nThis removes it from the site. The PDF stays in Cloudinary storage (not auto-deleted, since that needs a signed server-side call).`)) return;
+  if (!confirm(`Delete "${title}"?\n\nThe PDF stays in Cloudinary storage (not auto-deleted).`)) return;
   try {
     await deleteNoteDoc(noteId);
     showToast('Note deleted.', 'info');
     loadNotes();
   } catch(e) { showToast('Failed to delete: ' + e.message, 'error'); }
 }
-
+  
 initSuperAdmin();
 </script>
 </body>
