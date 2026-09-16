@@ -25,6 +25,7 @@ function injectDrawer(activePage = '') {
     { id:'own',         icon:'pencil',   label:'Take Your Own Test', href:'test-own.html' },
     { id:'results',     icon:'chart',    label:'Previous Results',   href:'dashboard.html#results' },
     { id:'leaderboard', icon:'trophy',   label:'Leaderboard',        href:'leaderboard.html' },
+    { id:'notes', icon:'pencil', label:'Notes', href:'notes.html' },
     { id:'analytics',   icon:'trending', label:'Analytics',          href:'analytics.html' },
     { id:'profile',     icon:'user',     label:'Profile',            href:'profile.html' },
   ];
