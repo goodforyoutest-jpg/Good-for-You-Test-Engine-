@@ -2,6 +2,7 @@
   "name": "gfyte",
   "version": "1.0.0",
   "dependencies": {
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "firebase-admin": "^12.1.0"
   }
 }

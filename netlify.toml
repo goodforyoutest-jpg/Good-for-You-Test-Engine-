@@ -1,0 +1,22 @@
+[build]
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "nft"
+
+[functions."extract-pdf"]
+  external_node_modules = ["pdf-parse"]
+
+[functions."start-test"]
+  external_node_modules = ["firebase-admin"]
+
+[functions."submit-test"]
+  external_node_modules = ["firebase-admin"]
+
+# CORS headers for PDF upload endpoint
+[[headers]]
+  for = "/.netlify/functions/extract-pdf"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
