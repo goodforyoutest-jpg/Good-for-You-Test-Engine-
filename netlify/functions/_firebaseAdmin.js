@@ -49,11 +49,25 @@ function getDb() { return getAdmin().firestore(); }
 async function verifyAuth(event) {
   const header = event.headers?.authorization || event.headers?.Authorization || '';
   const match  = /^Bearer\s+(.+)$/i.exec(header.trim());
-  if (!match) { const e = new Error('Not signed in.'); e.statusCode = 401; throw e; }
+  if (!match) {
+    const e = new Error('Not signed in.');
+    e.statusCode = 401;
+    throw e;
+  }
   try {
     return await getAdmin().auth().verifyIdToken(match[1]);
-  } catch {
-    const e = new Error('Your session has expired. Please sign in again.'); e.statusCode = 401; throw e;
+  } catch (err) {
+    console.error('Firebase ID token verification failed:', {
+      code: err?.code || null,
+      message: err?.message || null,
+      projectId: process.env.FB_ADMIN_PROJECT_ID || null,
+      hasClientEmail: Boolean(process.env.FB_ADMIN_CLIENT_EMAIL),
+      hasPrivateKey: Boolean(process.env.FB_ADMIN_PRIVATE_KEY),
+    });
+
+    const e = new Error('Authentication verification failed.');
+    e.statusCode = 401;
+    throw e;
   }
 }
 
