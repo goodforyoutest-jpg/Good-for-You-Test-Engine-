@@ -2,96 +2,63 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helper Functions ──────────────────────────────────────────────
-    function isSignedIn() {
-      return request.auth != null;
+    // Organisations — public read/write for backend API org creation
+    match /organisations/{orgCode} {
+      allow read: if true;
+      allow write: if true;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return isSignedIn() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // ── USERS ─────────────────────────────────────────────────────────
-    // Users can read and write their own document.
-    // Admins can read all users.
+    // Users — public write for backend account creation, auth required to read
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow read: if request.auth != null;
+      allow write: if true;
     }
 
-    // ── TESTS ─────────────────────────────────────────────────────────
-    // Any signed-in user can read active tests. `tests/{id}.questions`
-    // holds ONLY question text/options/passage/image — never the
-    // correct answer or explanation. Those live in testAnswers/{id}
-    // (below), which students can never read.
-    // Only admins can create/update/delete tests.
+    // Tests — same org users can read, teachers and admins can write
     match /tests/{testId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgCode ==
+        resource.data.orgCode;
+      allow write: if request.auth != null &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher');
     }
 
-    // ── TEST ANSWERS ─────────────────────────────────────────────────
-    // The correct-answer key for a test. Deliberately kept in its own
-    // document, separate from /tests/{id}, so that reading a test to
-    // display its questions can NEVER also hand over the answer key.
-    // Admins can read/write it (test authoring, preview). Everyone
-    // else is denied — even the grading Netlify Functions don't need
-    // an explicit allow here, since they use the Admin SDK, which
-    // bypasses these rules entirely.
+    // Explicit answer-key lock for live-test grading.
+    // This keeps the exact answer key from the broad catch-all below.
     match /testAnswers/{testId} {
-      allow read:  if isAdmin();
-      allow write: if isAdmin();
-    }
-
-    // ── ATTEMPTS ─────────────────────────────────────────────────────
-    // One doc per (test, user): `{testId}_{uid}`. Created and graded
-    // ONLY by the start-test / submit-test Netlify Functions (Admin
-    // SDK, bypasses these rules) — that's what keeps `answerKeyOrder`,
-    // the frozen marking scheme, and `status`/`resultId` tamper-proof.
-    // The client is only ever trusted to autosave its own progress:
-    // which option it picked, which question it's on, and the
-    // anti-cheat counters — nothing that affects how it gets graded.
-    match /attempts/{attemptId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['answered', 'currentQ', 'tabSwitchCount', 'cheatLog', 'lastSavedAt']);
-      allow create, delete: if false;
-    }
-
-    // ── RESULTS ───────────────────────────────────────────────────────
-    // Users can read their own results; admins can read all.
-    // Direct client-side creation is allowed ONLY for self-graded
-    // practice tests (testId == null — see test-own.html, which has no
-    // server-held answer key to protect in the first place). Results
-    // for a real, live test (testId != null) can only be created by
-    // submit-test.js via the Admin SDK — a signed-in client can no
-    // longer write itself a fake score by calling Firestore directly.
-    match /results/{resultId} {
-      allow read: if isSignedIn() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+      allow read: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
       );
-      allow create: if isSignedIn() &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.testId == null;
-      allow update: if isAdmin() ||
-        // Allow updating rank field only
-        (isSignedIn() && resource.data.userId == request.auth.uid &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rank']));
-      allow delete: if isAdmin();
+      allow write: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
+      );
     }
 
-    // ── ANALYTICS (optional collection) ───────────────────────────────
-    match /analytics/{docId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+    // Results — same org users can read, any authenticated user can write
+    match /results/{resultId} {
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgCode ==
+        resource.data.orgCode;
+      allow write: if request.auth != null;
     }
+
+    // Notes — public read (native PDF links, no login required), writes restricted to super admin only
+    match /notes/{noteId} {
+      allow read: if true;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+
+    // Everything else — authenticated only
+    // Important: this is deliberately broad but does not include testAnswers,
+    // because the explicit testAnswers rule above is more specific and must win.
+    match /{document=**} {
+      allow read, write: if request.auth != null &&
+        !document.matches('testAnswers/[^/]+');
+    }
+
   }
 }
