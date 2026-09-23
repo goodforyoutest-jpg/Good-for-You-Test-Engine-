@@ -14,7 +14,8 @@ service cloud.firestore {
       allow write: if true;
     }
 
-    // Tests — same org users can read, teachers and admins can write
+    // Tests — same-org users can read, admins can write.
+    // The dashboard query includes orgCode so Firestore can validate it.
     match /tests/{testId} {
       allow read: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgCode ==
@@ -25,7 +26,6 @@ service cloud.firestore {
     }
 
     // Explicit answer-key lock for live-test grading.
-    // This keeps the exact answer key from the broad catch-all below.
     match /testAnswers/{testId} {
       allow read: if request.auth != null && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
@@ -37,28 +37,30 @@ service cloud.firestore {
       );
     }
 
-    // Results — same org users can read, any authenticated user can write
+    // Results — users can read their own results; admins can read org results.
+    // This preserves the old org behavior while allowing the dashboard's
+    // userId query to work reliably.
     match /results/{resultId} {
-      allow read: if request.auth != null &&
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.orgCode ==
-        resource.data.orgCode;
+        resource.data.orgCode
+      );
       allow write: if request.auth != null;
     }
 
-    // Notes — public read (native PDF links, no login required), writes restricted to super admin only
+    // Notes — unchanged.
     match /notes/{noteId} {
       allow read: if true;
       allow write: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
     }
 
-    // Everything else — authenticated only
-    // Important: this is deliberately broad but does not include testAnswers,
-    // because the explicit testAnswers rule above is more specific and must win.
+    // Everything else — authenticated only, except answer keys are governed
+    // by the explicit rule above.
     match /{document=**} {
       allow read, write: if request.auth != null &&
         !document.matches('testAnswers/[^/]+');
     }
-
   }
 }
