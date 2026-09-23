@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Dashboard — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── DASHBOARD PAGE-SPECIFIC ── */
+@keyframes fadeUp  { from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)} }
+@keyframes live-pulse { 0%,100%{opacity:1;}50%{opacity:.3;} }
+
+/* Override body to ivory for this page */
+body { background: var(--ivory); color: var(--text); }
+
+.dash-layout {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  animation: fadeUp .55s ease both;
+}
+
+/* ── WELCOME BANNER ── */
+.welcome-banner {
+  background: var(--ivory-2);
+  border: 1px solid var(--ivory-3);
+  border-left: 4px solid var(--green);
+  padding: 28px 28px 24px;
+  margin-bottom: 28px;
+  position: relative; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.welcome-banner::after {
+  content: ''; position: absolute; right: -32px; top: -32px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: radial-gradient(circle,rgba(26,74,46,.06),transparent);
+  pointer-events: none;
+}
+.welcome-eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .58rem; color: var(--green); letter-spacing: .2em;
+  text-transform: uppercase; font-weight: 700; margin-bottom: 10px;
+}
+.welcome-eyebrow-line { width: 18px; height: 1.5px; background: #B8962E; flex-shrink: 0; }
+.welcome-name {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.5rem; font-weight: 700;
+  color: var(--green-dim); line-height: 1.15; margin-bottom: 5px;
+}
+.welcome-name em { font-style: italic; color: var(--green); }
+.welcome-sub { font-size: .84rem; color: var(--muted); line-height: 1.6; }
+
+/* Score Pills */
+.score-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.score-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px;
+  background: var(--green-mist); border: 1px solid var(--green-border);
+  font-size: .72rem; color: var(--green); font-weight: 500;
+}
+.score-pill strong { color: var(--green-dim); font-weight: 800; }
+
+/* ── STAT BOXES ── */
+.grid-stats {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 12px; margin-bottom: 28px;
+}
+.stat-box {
+  background: #fff; border: 1px solid var(--ivory-3);
+  border-top: 3px solid var(--green);
+  padding: 20px 16px; text-align: center;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+  transition: border-top-color .2s, box-shadow .2s;
+}
+.stat-box:hover { border-top-color: #B8962E; box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+.stat-box .s-num {
+  font-family: 'Libre Baskerville', serif;
+  font-size: 1.9rem; font-weight: 700;
+  color: var(--green); line-height: 1;
+}
+.stat-box .s-lbl {
+  font-size: .6rem; color: var(--faint);
+  text-transform: uppercase; letter-spacing: .1em; margin-top: 6px;
+}
+
+/* ── QUICK ACTIONS ── */
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; }
+.qa-btn {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  border: 1.5px solid var(--green-border-lt);
+  background: #fff; color: var(--green);
+  font-family: 'Inter', sans-serif; font-size: .84rem; font-weight: 600;
+  cursor: pointer; transition: all .22s; text-align: left;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.qa-btn .qa-icon {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: var(--green-mist); border: 1px solid var(--green-border); color: var(--green);
+}
+.qa-btn:hover { background: var(--green-mist); border-color: var(--green); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.qa-btn:active { transform: scale(.98); }
+.qa-btn.full {
+  grid-column: 1/-1; justify-content: center;
+  background: var(--green); color: #fff; border-color: var(--green);
+  font-size: .95rem; padding: 16px;
+  box-shadow: 0 4px 20px rgba(26,74,46,.25);
+}
+.qa-btn.full .qa-icon { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.25); color: #fff; }
+.qa-btn.full:hover { background: var(--green-lt); border-color: var(--green-lt); box-shadow: 0 8px 28px rgba(26,74,46,.35); }
+
+/* ── LIVE CARD ── */
+.live-card {
+  background: #fff; border: 1.5px solid rgba(220,38,38,.22);
+  border-left: 4px solid #C0392B;
+  padding: 18px 20px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: all .22s;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.live-card:hover { border-left-color: #C0392B; border-color: rgba(220,38,38,.42); transform: translateX(3px); box-shadow: 0 4px 20px rgba(0,0,0,.09); }
+.live-badge {
+  background: rgba(220,38,38,.07); border: 1px solid rgba(220,38,38,.28);
+  color: #C0392B; padding: 4px 12px;
+  font-size: .65rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+}
+.live-dot { width: 7px; height: 7px; background: #C0392B; border-radius: 50%; animation: live-pulse 1.2s ease infinite; }
+.live-info { flex: 1; }
+.live-title { font-weight: 700; font-size: .92rem; color: var(--text); margin-bottom: 3px; }
+.live-meta  { font-size: .73rem; color: var(--muted); }
+.live-action { text-align: right; flex-shrink: 0; }
+.live-action-label { font-size: .72rem; font-weight: 800; letter-spacing: .08em; }
+.live-action-sub { font-size: .66rem; color: var(--muted); margin-top: 2px; }
+
+/* ── RESULT CARD ── */
+.result-card {
+  background: #fff; border: 1px solid var(--ivory-3);
+  padding: 16px 20px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 16px;
+  cursor: pointer; transition: all .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+.result-card:hover { border-color: var(--green-border-lt); transform: translateX(3px); box-shadow: 0 3px 14px rgba(0,0,0,.08); }
+.result-score-circle {
+  width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Libre Baskerville', serif; font-size: 1rem; font-weight: 700;
+  border: 3px solid;
+}
+.result-card-info { flex: 1; }
+.result-card-title { font-weight: 700; font-size: .88rem; color: var(--text); margin-bottom: 3px; }
+.result-card-meta  { font-size: .72rem; color: var(--muted); }
+.result-card-rank  { text-align: right; flex-shrink: 0; font-size: .7rem; color: var(--faint); }
+.result-card-rank strong {
+  display: block; font-family: 'Libre Baskerville', serif;
+  font-style: italic; font-size: 1.2rem; color: var(--green);
+}
+
+/* empty-state override for ivory bg */
+.empty-state p { font-size: .86rem; }
+
+@media(max-width:600px){
+  .quick-grid { grid-template-columns: 1fr; }
+  .qa-btn.full { grid-column: 1/-1; }
+  .welcome-name { font-size: 1.25rem; }
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<!-- HEADER — exactly matches shared.css .site-header structure -->
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="header-ca-label" id="headerCaLabel">Good for You</span>
+  <span class="header-pill" id="headerPill">Dashboard</span>
+</header>
+
+<div class="page-wrap">
+<div class="dash-layout">
+
+  <!-- WELCOME BANNER -->
+  <div class="welcome-banner" id="welcomeBanner">
+    <div class="welcome-eyebrow">
+      <span class="welcome-eyebrow-line"></span>
+      Your Dashboard
+    </div>
+    <div class="welcome-name" id="welcomeName">Welcome back</div>
+    <div class="welcome-sub" id="welcomeSub">Loading your profile…</div>
+    <div class="score-pills" id="scorePills"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid-stats">
+    <div class="stat-box"><div class="s-num" id="dStatTests">—</div><div class="s-lbl">Tests Taken</div></div>
+    <div class="stat-box"><div class="s-num" id="dStatAvg">—</div><div class="s-lbl">Avg Score</div></div>
+    <div class="stat-box"><div class="s-num" id="dStatBest">—</div><div class="s-lbl">Best Score</div></div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div class="section-label">
+    <span>Quick Actions</span><div class="section-label-line"></div>
+  </div>
+
+  <div class="quick-grid">
+    <button class="qa-btn full" onclick="window.location.href='test-own.html'">
+      <span class="qa-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </span>
+      Take Your Own Test
+    </button>
+    <button class="qa-btn" onclick="window.location.href='leaderboard.html'">
+      <span class="qa-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+      </span>
+      Leaderboard
+    </button>
+    <button class="qa-btn" onclick="window.location.href='analytics.html'">
+      <span class="qa-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          <polyline points="17 6 23 6 23 12"/>
+        </svg>
+      </span>
+      Analytics
+    </button>
+  </div>
+
+  <!-- LIVE TESTS -->
+  <div class="section-label" id="live">
+    <span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="#C0392B"><circle cx="5" cy="5" r="5"/></svg>
+      Live Tests
+    </span>
+    <div class="section-label-line"></div>
+  </div>
+
+  <div id="liveTestsContainer">
+    <div class="loading-screen" style="min-height:120px;">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- PREVIOUS RESULTS -->
+  <div class="section-label" id="results">
+    <span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+      Previous Results
+    </span>
+    <div class="section-label-line"></div>
+  </div>
+
+  <div id="resultsContainer">
+    <div class="loading-screen" style="min-height:120px;">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- /page-wrap -->
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script>
+initFirebase();
+initBgCanvas();
+injectDrawer('');
+
+let currentUser = null;
+let userDoc     = null;
+
+async function initDashboard() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  userDoc = await getUserDoc(currentUser.uid);
+  injectHeaderUser();
+  populateDrawerUser();
+
+  const name = userDoc?.username || currentUser.displayName || 'Student';
+  document.getElementById('welcomeName').innerHTML  = 'Welcome back, <em>' + name + '</em>';
+  document.getElementById('welcomeSub').textContent  = 'Ready to test your knowledge today?';
+  document.getElementById('headerCaLabel').textContent = name;
+
+  await Promise.all([loadStats(), loadLiveTests(), loadResults()]);
+}
+
+async function loadStats() {
+  try {
+    const snap = await window.db.collection('results')
+      .where('userId','==',currentUser.uid).limit(50).get();
+
+    const results = snap.docs.map(d=>d.data()).sort((a,b)=>{
+      const ta = a.createdAt?.toDate?.() || new Date(0);
+      const tb = b.createdAt?.toDate?.() || new Date(0);
+      return tb - ta;
+    });
+    const total = results.length;
+    const avg   = total ? Math.round(results.reduce((s,r)=>s+(r.percentage||0),0)/total) : 0;
+    const best  = total ? Math.max(...results.map(r=>r.percentage||0)) : 0;
+
+    document.getElementById('dStatTests').textContent = total;
+    document.getElementById('dStatAvg').textContent   = avg + '%';
+    document.getElementById('dStatBest').textContent  = best + '%';
+
+    const pills = document.getElementById('scorePills');
+    if (results.length > 0) {
+      const last = results[0];
+      pills.innerHTML = `
+        <div class="score-pill">Last test: <strong>${last.percentage||0}%</strong></div>
+        <div class="score-pill">Rank: <strong>#${last.rank||'—'}</strong></div>
+        <div class="score-pill">Questions: <strong>${last.total||0}</strong></div>
+      `;
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function loadLiveTests() {
+  const container = document.getElementById('liveTestsContainer');
+  try {
+    const userOrgCode = userDoc?.orgCode || null;
+    const snap = await window.db.collection('tests').where('active','==',true).get();
+    const orgDocs = snap.docs.filter(d => d.data().orgCode === userOrgCode);
+
+    if (orgDocs.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="es-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="2"/>
+              <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+            </svg>
+          </div>
+          <p>No live tests available right now.<br>Check back soon or take your own test.</p>
+        </div>`;
+      return;
+    }
+
+    const resultsSnap = await window.db.collection('results')
+      .where('userId','==',currentUser.uid).get();
+    const attemptedMap = {};
+    resultsSnap.docs.forEach(d => {
+      const r = d.data();
+      if (r.testId && !attemptedMap[r.testId]) {
+        attemptedMap[r.testId] = { resultId: d.id, pct: r.percentage || 0 };
+      }
+    });
+
+    container.innerHTML = orgDocs.map(doc => {
+      const t = doc.data();
+      const mins = t.durationMinutes || '—';
+      const attempted = attemptedMap[doc.id];
+
+      if (attempted) {
+        return `
+          <div class="live-card" onclick="viewLiveResult('${attempted.resultId}','${doc.id}','${escHtml(t.title)}',${t.durationMinutes||0})">
+            <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+            <div class="live-info">
+              <div class="live-title">${escHtml(t.title)}</div>
+              <div class="live-meta">${(t.questions||[]).length} Questions &middot; ${mins} mins &middot; ${t.subject||'General'}</div>
+            </div>
+            <div class="live-action">
+              <div class="live-action-label" style="color:var(--green);">VIEW RESULT &rarr;</div>
+              <div class="live-action-sub">Score: ${attempted.pct}%</div>
+            </div>
+          </div>`;
+      } else {
+        return `
+          <div class="live-card" onclick="joinTest('${doc.id}','${escHtml(t.title)}',${t.durationMinutes||0})">
+            <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+            <div class="live-info">
+              <div class="live-title">${escHtml(t.title)}</div>
+              <div class="live-meta">${(t.questions||[]).length} Questions &middot; ${mins} mins &middot; ${t.subject||'General'}</div>
+            </div>
+            <div class="live-action">
+              <div class="live-action-label" style="color:#B8962E;">JOIN &rarr;</div>
+            </div>
+          </div>`;
+      }
+    }).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><p>Error loading tests. Check Firebase config.</p></div>`;
+    console.error(e);
+  }
+}
+
+async function loadResults() {
+  const container = document.getElementById('resultsContainer');
+  try {
+    const snap = await window.db.collection('results')
+      .where('userId','==',currentUser.uid).limit(20).get();
+
+    if (snap.empty) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="es-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <p>No test results yet.<br>Complete your first test to see results here.</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = snap.docs.map(doc => {
+      const r   = doc.data();
+      const pct = r.percentage || 0;
+      const color = pct>=75 ? '#1A4A2E' : pct>=50 ? '#B8962E' : '#C0392B';
+      return `
+        <div class="result-card" onclick="viewResult('${doc.id}')">
+          <div class="result-score-circle" style="color:${color};border-color:${color};">
+            ${pct}%
+          </div>
+          <div class="result-card-info">
+            <div class="result-card-title">${escHtml(r.testTitle||'Custom Test')}</div>
+            <div class="result-card-meta">${r.correct||0}/${r.total||0} correct &middot; ${formatDate(r.createdAt)}</div>
+          </div>
+          <div class="result-card-rank">
+            <strong>${r.rank ? '#'+r.rank : '—'}</strong>
+            Rank
+          </div>
+        </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state"><p>Error loading results.</p></div>`;
+  }
+}
+
+function joinTest(testId, title, duration) {
+  sessionStorage.setItem('liveTestId', testId);
+  sessionStorage.setItem('liveTestTitle', title);
+  sessionStorage.setItem('liveTestDuration', duration);
+  window.location.href = 'test.html';
+}
+
+function viewLiveResult(resultId, testId, title, duration) {
+  sessionStorage.setItem('reviewResultId', resultId);
+  sessionStorage.setItem('liveTestId', testId);
+  sessionStorage.setItem('liveTestTitle', title);
+  sessionStorage.setItem('liveTestDuration', duration);
+  sessionStorage.setItem('reviewMode', 'true');
+  window.location.href = 'test.html';
+}
+
+function viewResult(resultId) {
+  sessionStorage.setItem('viewResultId', resultId);
+  window.location.href = 'result.html';
+}
+
+initDashboard();
+</script>
+</body>
+</html>
