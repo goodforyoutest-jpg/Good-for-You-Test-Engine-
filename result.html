@@ -83,8 +83,10 @@ async function loadResult() {
   const user = await requireAuth();
   if (!user) return;
 
-  const resultId = sessionStorage.getItem('viewResultId');
+  const params = new URLSearchParams(window.location.search);
+  const resultId = sessionStorage.getItem('viewResultId') || params.get('resultId');
   if (!resultId) { window.location.href='dashboard.html'; return; }
+  sessionStorage.setItem('viewResultId', resultId);
 
   try {
     const snap = await window.db.collection('results').doc(resultId).get();

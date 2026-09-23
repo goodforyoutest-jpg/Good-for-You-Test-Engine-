@@ -49,6 +49,33 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
+    // Attempts — the server creates/finalises these; the client may only
+    // update progress fields for its own in-progress attempt.
+    match /attempts/{attemptId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.testId == resource.data.testId &&
+        request.resource.data.orgCode == resource.data.orgCode &&
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.answerKeyOrder == resource.data.answerKeyOrder &&
+        request.resource.data.questionsSnapshot == resource.data.questionsSnapshot &&
+        request.resource.data.startedAt == resource.data.startedAt &&
+        request.resource.data.durationMinutes == resource.data.durationMinutes &&
+        request.resource.data.marksCorrect == resource.data.marksCorrect &&
+        request.resource.data.marksWrong == resource.data.marksWrong &&
+        request.resource.data.negativeMarking == resource.data.negativeMarking &&
+        (!('resultId' in resource.data) || request.resource.data.resultId == resource.data.resultId) &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'answered',
+          'currentQ',
+          'tabSwitchCount',
+          'cheatLog',
+          'lastSavedAt'
+        ]);
+    }
+
     // Notes — unchanged.
     match /notes/{noteId} {
       allow read: if true;
@@ -60,7 +87,8 @@ service cloud.firestore {
     // by the explicit rule above.
     match /{document=**} {
       allow read, write: if request.auth != null &&
-        !document.matches('testAnswers/[^/]+');
+        !document.matches('testAnswers/[^/]+') &&
+        !document.matches('attempts/[^/]+');
     }
   }
 }
