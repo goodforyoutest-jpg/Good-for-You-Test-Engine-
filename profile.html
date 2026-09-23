@@ -216,7 +216,21 @@ async function loadProfile() {
   }
 
   /* results */
-  const snap    = await window.db.collection('results').where('userId','==',user.uid).get();
+  let results = [];
+
+if (orgCode) {
+  const snap = await window.db.collection('results')
+    .where('userId', '==', user.uid)
+    .where('orgCode', '==', orgCode)
+    .get();
+
+  results = snap.docs.map(d => d.data()).sort((a,b) => {
+    const ta = a.createdAt?.toDate?.()?.getTime() || 0;
+    const tb = b.createdAt?.toDate?.()?.getTime() || 0;
+    return tb - ta;
+  });
+}
+  
   const results = snap.docs.map(d => d.data()).sort((a,b) => {
     const ta = a.createdAt?.toDate?.()?.getTime() || 0;
     const tb = b.createdAt?.toDate?.()?.getTime() || 0;
