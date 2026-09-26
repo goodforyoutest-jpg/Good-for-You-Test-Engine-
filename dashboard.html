@@ -338,8 +338,19 @@ async function loadLiveTests() {
   const container = document.getElementById('liveTestsContainer');
   try {
     const userOrgCode = userDoc?.orgCode || null;
-    const snap = await window.db.collection('tests').where('active','==',true).get();
-    const orgDocs = snap.docs.filter(d => d.data().orgCode === userOrgCode);
+    if (!userOrgCode) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>Your account is not linked to an organisation yet.</p>
+        </div>`;
+      return;
+    }
+
+    const snap = await window.db.collection('tests')
+      .where('active','==',true)
+      .where('orgCode','==',userOrgCode)
+      .get();
+    const orgDocs = snap.docs;
 
     if (orgDocs.length === 0) {
       container.innerHTML = `

@@ -27,9 +27,9 @@ const admin = require('firebase-admin');
 
 function getAdmin() {
   if (!admin.apps.length) {
-    const projectId   = process.env.FB_ADMIN_PROJECT_ID;
-    const clientEmail = process.env.FB_ADMIN_CLIENT_EMAIL;
-    const privateKey  = (process.env.FB_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+    const projectId   = (process.env.FB_ADMIN_PROJECT_ID || '').trim();
+    const clientEmail = (process.env.FB_ADMIN_CLIENT_EMAIL || '').trim();
+    const privateKey  = normalisePrivateKey(process.env.FB_ADMIN_PRIVATE_KEY || '');
 
     if (!projectId || !clientEmail || !privateKey) {
       throw new Error('Server credentials are not configured (missing FB_ADMIN_* env vars).');
@@ -40,6 +40,18 @@ function getAdmin() {
     });
   }
   return admin;
+}
+
+function normalisePrivateKey(value) {
+  let key = String(value || '').trim();
+  if (!key) return '';
+
+  // Supports keys pasted with surrounding quotes in dashboard UIs.
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+
+  return key.replace(/\\n/g, '\n');
 }
 
 function getDb() { return getAdmin().firestore(); }

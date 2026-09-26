@@ -217,25 +217,18 @@ async function loadProfile() {
 
   /* results */
   let results = [];
+  if (orgCode) {
+    const snap = await window.db.collection('results')
+      .where('userId', '==', user.uid)
+      .where('orgCode', '==', orgCode)
+      .get();
 
-if (orgCode) {
-  const snap = await window.db.collection('results')
-    .where('userId', '==', user.uid)
-    .where('orgCode', '==', orgCode)
-    .get();
-
-  results = snap.docs.map(d => d.data()).sort((a,b) => {
-    const ta = a.createdAt?.toDate?.()?.getTime() || 0;
-    const tb = b.createdAt?.toDate?.()?.getTime() || 0;
-    return tb - ta;
-  });
-}
-  
-  const results = snap.docs.map(d => d.data()).sort((a,b) => {
-    const ta = a.createdAt?.toDate?.()?.getTime() || 0;
-    const tb = b.createdAt?.toDate?.()?.getTime() || 0;
-    return tb - ta;
-  });
+    results = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => {
+      const ta = a.createdAt?.toDate?.()?.getTime() || 0;
+      const tb = b.createdAt?.toDate?.()?.getTime() || 0;
+      return tb - ta;
+    });
+  }
 
   const total          = results.length;
   const avg            = total ? Math.round(results.reduce((s,r) => s+(r.percentage||0),0)/total) : 0;
@@ -318,7 +311,7 @@ if (orgCode) {
         const pct     = r.percentage||0;
         const rank    = r.rank ? '#'+r.rank : '—';
         const dateStr = r.createdAt?.toDate?.() ? formatDate(r.createdAt) : '—';
-        return '<div class="history-row" onclick="window.location.href=\'result.html?testId=' + encodeURIComponent(r.testId||'') + '&userId=' + encodeURIComponent(user.uid) + '\'">' +
+        return '<div class="history-row" onclick="viewProfileResult(\'' + escHtml(r.id || '') + '\')">' +
           '<div class="history-rank">' + rank + '</div>' +
           '<div class="history-info">' +
             '<div class="history-title">' + escHtml(r.testTitle||'—') + '</div>' +
@@ -455,6 +448,15 @@ function reportProblem() {
     'Hi,\n\nI would like to report a problem:\n\n[Describe your issue here]\n\n---\nReported by: ' + name + '\nEmail: ' + email + '\n'
   );
   window.location.href = 'mailto:goodforyoutest@gmail.com?subject=' + subject + '&body=' + body;
+}
+
+function viewProfileResult(resultId) {
+  if (!resultId) {
+    showToast('Result not found.', 'error');
+    return;
+  }
+  sessionStorage.setItem('viewResultId', resultId);
+  window.location.href = 'result.html';
 }
 
 loadProfile();
