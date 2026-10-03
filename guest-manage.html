@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<title>Guest Test Results — Good for You Test Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+.gr-layout { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+
+.admin-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.admin-stat {
+  background:#fff; border:1px solid var(--ivory-3); border-bottom:3px solid var(--green);
+  padding:20px 16px; display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.admin-stat .as-num { font-family:'Libre Baskerville',serif; font-size:2rem; font-weight:700; color:var(--green); line-height:1; }
+.admin-stat .as-lbl { font-size:.63rem; color:var(--faint); text-transform:uppercase; letter-spacing:.1em; }
+
+.analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.ana-card { background:#fff; border:1px solid var(--ivory-3); padding:18px; }
+.ana-card-header { display:flex; align-items:center; gap:8px; margin-bottom:14px; color:var(--green); padding-bottom:10px; border-bottom:1px solid var(--ivory-3); }
+.ana-card-title { font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--green); }
+
+.lb-row { display:flex; align-items:center; gap:14px; padding:12px 4px; border-bottom:1px solid var(--ivory-3); }
+.lb-row:last-child { border-bottom:none; }
+.lb-rank { font-family:'Libre Baskerville',serif; font-size:1.1rem; font-weight:700; color:var(--green); min-width:32px; }
+.lb-name { flex:1; font-size:.88rem; color:var(--text); font-weight:500; min-width:0; overflow-wrap:anywhere; }
+.lb-score { font-weight:800; color:var(--green); }
+
+.diff-bar-wrap { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.diff-q-label { font-size:.75rem; color:var(--text-mid); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px; }
+.diff-bar-track { flex:1; height:7px; background:var(--ivory-3); overflow:hidden; }
+.diff-bar-fill { height:100%; }
+
+.res-table-wrap { overflow-x:auto; background:#fff; border:1px solid var(--ivory-3); margin-bottom:20px; }
+.res-table { width:100%; border-collapse:collapse; font-size:.8rem; min-width:520px; }
+.res-table th { text-align:left; padding:10px 12px; background:var(--green-mist); color:var(--green);
+  font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
+.res-table td { padding:10px 12px; border-top:1px solid var(--ivory-3); white-space:nowrap; }
+.res-table td.num, .res-table th.num { text-align:center; }
+
+.empty-state { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty-state p { font-size:.9rem; line-height:1.55; }
+
+.wipe-banner {
+  display:flex; gap:10px; align-items:flex-start; padding:14px 16px; margin-bottom:22px;
+  background:#FFF8E1; border:1px solid #F0D58A; color:#7A5B00; font-size:.82rem; line-height:1.5;
+}
+.wipe-banner strong { color:#5C4400; }
+
+.link-box { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.link-box input { flex:1; min-width:200px; font-size:.78rem; }
+
+@media(max-width:768px){
+  .admin-stats { grid-template-columns:repeat(2,1fr); }
+  .analytics-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="toast-container"></div>
+
+<header class="site-header">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  <span class="header-ca-label" id="headerCaLabel">Guest Test Results</span>
+</header>
+
+<div class="page-wrap">
+<div class="gr-layout">
+
+  <div class="wipe-banner">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div><strong>Download before midnight IST.</strong> This test and every result are permanently deleted every night at 12:00 AM IST. Keep this page's link private — anyone with it can see the results.</div>
+  </div>
+
+  <div id="content">
+    <div class="empty-state"><div class="loading-screen" style="min-height:160px;"><div class="spinner"></div></div></div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="drawer.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/* No login needed: access to results is the ownerKey in the link. Firebase is only
+   initialised so the side drawer can show the visitor's login state. */
+try { initFirebase(); injectDrawer(''); } catch (e) { console.error('Drawer failed to load:', e); }
+initBgCanvas();
+
+const GUEST_API = 'https://deno.goodforyoutest-jpg.deno.net';
+const params    = new URLSearchParams(location.search);
+const guestTestId = (params.get('id')  || '').trim();
+const ownerKey    = (params.get('key') || '').trim();
+
+let G = { test: null, rows: [], infoFields: [], nameKey: null };
+
+function fmt(n) { return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString(); }
+
+function showMsg(title, msg) {
+  document.getElementById('content').innerHTML =
+    `<div class="empty-state"><p><strong>${escHtml(title)}</strong><br>${escHtml(msg)}</p></div>`;
+}
+
+async function loadResults(silent) {
+  if (!guestTestId || !ownerKey) {
+    showMsg('Invalid link', 'This link is missing the test ID or access key. Use the manage link you were given when you created the test.');
+    return;
+  }
+  try {
+    const res = await fetch(GUEST_API + '/guest-results', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guestTestId, ownerKey }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'Could not load results.');
+    G.test       = data.test || {};
+    G.infoFields = Array.isArray(G.test.infoFields) ? G.test.infoFields : [];
+    G.rows       = Array.isArray(data.results) ? data.results : [];
+    // Name column = the field keyed "name" (or labelled Name), else the first field.
+    const nf = G.infoFields.find(f => /^name$/i.test(f.key) || /name/i.test(f.label || '')) || G.infoFields[0];
+    G.nameKey = nf ? nf.key : null;
+    document.getElementById('headerCaLabel').textContent = 'Results — ' + (G.test.title || 'Guest Test');
+    render();
+    if (silent) showToast('Results refreshed.', 'success');
+  } catch (e) {
+    showMsg('Could not load results', e?.message || String(e));
+    console.error(e);
+  }
+}
+
+function studentName(r) {
+  const si = r.studentInfo || {};
+  return (G.nameKey && si[G.nameKey]) || Object.values(si).find(v => v) || 'Unknown';
+}
+
+function sortedRows() {
+  return [...G.rows].sort((a, b) =>
+    (b.percentage || 0) - (a.percentage || 0) || (a.timeTaken || 0) - (b.timeTaken || 0));
+}
+
+function render() {
+  const el = document.getElementById('content');
+  const rows = sortedRows();
+  const total = rows.length;
+  const shareUrl = location.origin + location.pathname.replace(/[^/]*$/, '') + 'guest-test.html?id=' + encodeURIComponent(guestTestId);
+
+  const linkCard = `
+    <div class="panel-card" style="margin-bottom:20px;">
+      <div class="panel-card-header"><span>Student link</span></div>
+      <div style="padding:16px 20px;" class="link-box">
+        <input class="form-input" id="studentLink" value="${escHtml(shareUrl)}" readonly onclick="this.select()">
+        <button class="btn-secondary" onclick="copyLink()">Copy</button>
+        <button class="btn-secondary" onclick="loadResults(true)">Refresh</button>
+      </div>
+    </div>`;
+
+  if (total === 0) {
+    el.innerHTML = linkCard + `<div class="empty-state"><p><strong>${escHtml(G.test.title || 'Guest Test')}</strong><br>No submissions yet. Share the student link above, then tap Refresh.</p></div>`;
+    return;
+  }
+
+  const avg  = Math.round(rows.reduce((s, r) => s + (r.percentage || 0), 0) / total);
+  const best = Math.max(...rows.map(r => r.percentage || 0));
+
+  const secAgg = {};
+  rows.forEach(r => Object.entries(r.sectionStats || {}).forEach(([sec, st]) => {
+    if (!secAgg[sec]) secAgg[sec] = { c: 0, t: 0 };
+    secAgg[sec].c += st.c || 0; secAgg[sec].t += st.t || 0;
+  }));
+  const secHtml = Object.entries(secAgg).filter(([, v]) => v.t > 0).map(([sec, { c, t }]) => {
+    const pct = Math.round(c / t * 100);
+    const color = pct >= 75 ? 'var(--green)' : pct >= 50 ? '#B8962E' : '#DC2626';
+    return `<div class="diff-bar-wrap"><div class="diff-q-label">${escHtml(sec)}</div>
+      <div class="diff-bar-track"><div class="diff-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+      <div style="font-size:.72rem;color:var(--muted);min-width:36px;text-align:right;">${pct}%</div></div>`;
+  }).join('');
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const lbHtml = rows.slice(0, 10).map((r, i) => `
+    <div class="lb-row"><div class="lb-rank">${medals[i] || '#' + (i + 1)}</div>
+      <div class="lb-name">${escHtml(studentName(r))}<br><span style="font-size:.72rem;color:var(--muted);">${r.correct || 0}/${r.total || 0} correct</span></div>
+      <div class="lb-score">${r.percentage || 0}%</div></div>`).join('');
+
+  const extra = G.infoFields.filter(f => f.key !== G.nameKey);
+  const head = `<tr><th class="num">Rank</th><th>Name</th>${extra.map(f => `<th>${escHtml(f.label || f.key)}</th>`).join('')}
+    <th class="num">Score %</th><th class="num">Marks</th><th class="num">Correct</th><th class="num">Wrong</th><th class="num">Skipped</th><th class="num">Tab switches</th></tr>`;
+  const body = rows.map((r, i) => {
+    const si = r.studentInfo || {};
+    return `<tr><td class="num">${i + 1}</td><td>${escHtml(studentName(r))}</td>
+      ${extra.map(f => `<td>${escHtml(si[f.key] || '')}</td>`).join('')}
+      <td class="num">${r.percentage || 0}%</td><td class="num">${fmt(r.finalScore || 0)}/${fmt(r.maxScore || 0)}</td>
+      <td class="num">${r.correct || 0}</td><td class="num">${r.wrong || 0}</td><td class="num">${r.skipped || 0}</td>
+      <td class="num">${r.tabSwitchCount || 0}</td></tr>`;
+  }).join('');
+
+  el.innerHTML = linkCard + `
+    <div class="admin-stats">
+      <div class="admin-stat"><div class="as-num">${total}</div><div class="as-lbl">Submissions</div></div>
+      <div class="admin-stat"><div class="as-num">${avg}%</div><div class="as-lbl">Avg Score</div></div>
+      <div class="admin-stat"><div class="as-num">${best}%</div><div class="as-lbl">Top Score</div></div>
+    </div>
+    <div class="analytics-grid">
+      <div class="ana-card"><div class="ana-card-header"><span class="ana-card-title">Section Accuracy</span></div>
+        ${secHtml || '<div style="color:var(--muted);font-size:.82rem;">No section data available.</div>'}</div>
+      <div class="ana-card"><div class="ana-card-header"><span class="ana-card-title">Leaderboard (Top 10)</span></div>${lbHtml}</div>
+    </div>
+    <div class="res-table-wrap"><table class="res-table"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn-primary" onclick="exportResults()" style="display:inline-flex;align-items:center;gap:8px;padding:12px 26px;font-size:.95rem;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Results
+      </button>
+    </div>`;
+}
+
+function copyLink() {
+  const inp = document.getElementById('studentLink');
+  inp.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(inp.value) : Promise.reject())
+    .then(() => showToast('Link copied.', 'success'))
+    .catch(() => { try { document.execCommand('copy'); showToast('Link copied.', 'success'); } catch (e) {} });
+}
+
+/* ── XLSX TEMPLATE — raw XML base64, styles preserved by JSZip (same template as Export Results) ── */
+const XLSX_TPL_B64 = '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';
+
+function colLetter(n) { // 1 -> A
+  let s = '';
+  while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+  return s;
+}
+
+function exportResults() {
+  if (!G.test || !G.rows.length) { showToast('No results to export.', 'error'); return; }
+
+  const title   = G.test.title   || 'Guest Test';
+  const subject = G.test.subject || '-';
+  const sorted  = sortedRows();
+  const totalQs = parseInt(sorted[0].total) || 0;
+  const months  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now     = new Date();
+  const expDate = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Template style ids: white rows rank5 name6 pct7 data8 · green rows rank9 name10 pct11 data12 · spacer13 · avg 14/15/16
+  const S = { rank_w:5, name_w:6, pct_w:7, data_w:8, rank_g:9, name_g:10, pct_g:11, data_g:12, spacer:13, avg_lbl:14, avg_score:15, avg_rest:16 };
+
+  // Columns: Rank | Name | other info fields… | Score % | Marks | Correct | Wrong | Skipped | Total Qs | Tab Switches
+  const extra = G.infoFields.filter(f => f.key !== G.nameKey);
+  const cols = [
+    { h:'Rank', w:8,  kind:'rank' },
+    { h:'Student Name', w:28, kind:'name' },
+    ...extra.map(f => ({ h:f.label || f.key, w:20, kind:'text', key:f.key })),
+    { h:'Score %',      w:13, kind:'pct' },
+    { h:'Marks',        w:12, kind:'marks' },
+    { h:'Correct',      w:10, kind:'data', f:r => parseInt(r.correct) || 0 },
+    { h:'Wrong',        w:10, kind:'data', f:r => parseInt(r.wrong) || 0 },
+    { h:'Skipped',      w:10, kind:'data', f:r => (r.skipped !== undefined && r.skipped !== null && r.skipped !== '') ? parseInt(r.skipped) : Math.max(0, (parseInt(r.total) || totalQs) - (parseInt(r.correct) || 0) - (parseInt(r.wrong) || 0)) },
+    { h:'Total Qs',     w:12, kind:'data', f:r => parseInt(r.total) || totalQs },
+    { h:'Tab Switches', w:13, kind:'data', f:r => parseInt(r.tabSwitchCount) || 0 },
+  ];
+  const nCols   = cols.length;
+  const lastCol = colLetter(nCols);
+  const pctIdx  = cols.findIndex(c => c.kind === 'pct');
+  const pctCol  = colLetter(pctIdx + 1);
+
+  const binStr = atob(XLSX_TPL_B64);
+  const bytes  = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+
+  JSZip.loadAsync(bytes).then(function(zip) {
+    return zip.file('xl/worksheets/sheet1.xml').async('string').then(function(sheetXml) {
+
+      sheetXml = sheetXml
+        .replace('TITLE_PLACEHOLDER',   esc(title) + ' — Result Sheet')
+        .replace('SUBJECT_PLACEHOLDER', 'Subject: ' + esc(subject))
+        .replace('META_PLACEHOLDER',    'Questions: ' + totalQs + '  |  Submissions: ' + sorted.length + '  |  Exported: ' + expDate);
+
+      // Column widths
+      sheetXml = sheetXml.replace(/<cols>[\s\S]*?<\/cols>/,
+        '<cols>' + cols.map(function(c, i) {
+          return '<col width="' + c.w + '" customWidth="1" min="' + (i + 1) + '" max="' + (i + 1) + '"/>';
+        }).join('') + '</cols>');
+
+      // Header row 4 (style 4 from template)
+      var headerXml = '<row r="4" ht="24" customHeight="1">' + cols.map(function(c, i) {
+        return '<c r="' + colLetter(i + 1) + '4" s="4" t="inlineStr"><is><t>' + esc(c.h) + '</t></is></c>';
+      }).join('') + '</row>';
+
+      var dataRowsXml = '';
+      sorted.forEach(function(r, idx) {
+        var excelRow = 5 + idx;
+        var white = (idx % 2 === 0);
+        var rankS = white ? S.rank_w : S.rank_g, nameS = white ? S.name_w : S.name_g;
+        var pctS  = white ? S.pct_w  : S.pct_g,  dataS = white ? S.data_w : S.data_g;
+        var si    = r.studentInfo || {};
+        var pctVal = ((parseFloat(r.percentage) || 0) / 100).toFixed(6);
+
+        var cells = cols.map(function(c, i) {
+          var ref = colLetter(i + 1) + excelRow;
+          if (c.kind === 'rank') return '<c r="' + ref + '" s="' + rankS + '"><v>' + (idx + 1) + '</v></c>';
+          if (c.kind === 'name') return '<c r="' + ref + '" s="' + nameS + '" t="inlineStr"><is><t>' + esc(studentName(r)) + '</t></is></c>';
+          if (c.kind === 'text') return '<c r="' + ref + '" s="' + nameS + '" t="inlineStr"><is><t>' + esc(si[c.key] || '') + '</t></is></c>';
+          if (c.kind === 'pct')  return '<c r="' + ref + '" s="' + pctS + '"><v>' + pctVal + '</v></c>';
+          if (c.kind === 'marks') {
+            var m = fmt(r.finalScore || 0) + ' / ' + fmt(r.maxScore || 0);
+            return '<c r="' + ref + '" s="' + dataS + '" t="inlineStr"><is><t>' + esc(m) + '</t></is></c>';
+          }
+          return '<c r="' + ref + '" s="' + dataS + '"><v>' + c.f(r) + '</v></c>';
+        }).join('');
+        dataRowsXml += '<row r="' + excelRow + '" ht="20" customHeight="1">' + cells + '</row>';
+      });
+
+      var spacerRow = 5 + sorted.length;
+      var avgRow    = spacerRow + 1;
+      var firstData = 5, lastData = spacerRow - 1;
+
+      function spacerXml(rn) {
+        return '<row r="' + rn + '" ht="5" customHeight="1">' +
+          cols.map(function(c, i) { return '<c r="' + colLetter(i + 1) + rn + '" s="' + S.spacer + '"/>'; }).join('') + '</row>';
+      }
+
+      dataRowsXml += spacerXml(spacerRow);
+      dataRowsXml += '<row r="' + avgRow + '" ht="22" customHeight="1">' + cols.map(function(c, i) {
+        var ref = colLetter(i + 1) + avgRow;
+        if (i === 0) return '<c r="' + ref + '" s="' + S.avg_lbl + '" t="inlineStr"><is><t>Class Average</t></is></c>';
+        if (i === 1) return '<c r="' + ref + '" s="' + S.avg_lbl + '"/>';
+        if (i === pctIdx) return '<c r="' + ref + '" s="' + S.avg_score + '"><f>AVERAGE(' + pctCol + firstData + ':' + pctCol + lastData + ')</f><v>0</v></c>';
+        return '<c r="' + ref + '" s="' + S.avg_rest + '"/>';
+      }).join('') + '</row>';
+      for (var tr = avgRow + 1; tr <= avgRow + 3; tr++) dataRowsXml += spacerXml(tr);
+
+      // Replace header + sample rows (everything from row 4 to </sheetData>)
+      sheetXml = sheetXml.replace(/<row r="4"[\s\S]*?<\/sheetData>/, headerXml + dataRowsXml + '</sheetData>');
+
+      // Merges: title/subject/meta span all columns; avg label spans A:B
+      sheetXml = sheetXml.replace(/<mergeCells[\s\S]*?<\/mergeCells>/,
+        '<mergeCells count="4">' +
+        '<mergeCell ref="A' + avgRow + ':B' + avgRow + '"/>' +
+        '<mergeCell ref="A3:' + lastCol + '3"/>' +
+        '<mergeCell ref="A2:' + lastCol + '2"/>' +
+        '<mergeCell ref="A1:' + lastCol + '1"/></mergeCells>');
+
+      sheetXml = sheetXml.replace(/<dimension ref="[^"]*"\/>/, '<dimension ref="A1:' + lastCol + (avgRow + 3) + '"/>');
+
+      zip.file('xl/worksheets/sheet1.xml', sheetXml);
+      return zip.generateAsync({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+    });
+  }).then(function(blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (title || 'Guest_Test').replace(/[^a-z0-9 _-]/gi, '_') + '_results.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(a.href); }, 2000);
+    showToast('Export downloaded!', 'success');
+  }).catch(function(err) {
+    console.error(err);
+    showToast('Export failed: ' + err.message, 'error');
+  });
+}
+
+loadResults(false);
+</script>
+</body>
+</html>
